@@ -373,7 +373,7 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
   const handleKomodoMove = async (fen) => {
     setKomodoThinking(true);
     try {
-      const res = await fetch('/api/komodo/move', {
+      const res = await fetch('https://server-wispy-sound-390.fly.dev/api/komodo/move', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fen, elo: puzzle.rating || 1500 })
