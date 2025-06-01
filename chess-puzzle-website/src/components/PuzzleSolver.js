@@ -396,11 +396,20 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
     return false;
   };
 
+  // Utility to get the correct Komodo API URL
+  const getKomodoApiUrl = () => {
+    if (process.env.NODE_ENV === 'production') {
+      return 'https://server-wispy-sound-390.fly.dev/api/komodo/move';
+    } else {
+      return 'http://localhost:5001/api/komodo/move';
+    }
+  };
+
   // Call backend API to get Komodo's move
   const handleKomodoMove = async (fen) => {
     setKomodoThinking(true);
     try {
-      const res = await fetch('https://server-wispy-sound-390.fly.dev/api/komodo/move', {
+      const res = await fetch(getKomodoApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fen, elo: puzzle.rating || 1500 })
