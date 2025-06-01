@@ -343,12 +343,16 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
     setMoveHistory([...moveHistory]);
     setShowCompletion(false);
     setVsKomodo(true);
-    setKomodoColor(chess.turn()); // Komodo plays the side to move
+    // Determine user and Komodo color
+    const userColor = puzzle.orientation === 'white' ? 'w' : 'b';
+    const komodoColor = userColor === 'w' ? 'b' : 'w';
+    setKomodoColor(komodoColor);
     setKomodoThinking(false);
-    // If Komodo is to move, trigger Komodo move
-    if (chess.turn() === 'w' && puzzle.orientation === 'white' || chess.turn() === 'b' && puzzle.orientation === 'black') {
+    // Only trigger Komodo move if it's Komodo's turn
+    if (chess.turn() === komodoColor) {
       handleKomodoMove(chess.fen());
     }
+    // If it's user's turn, do nothing; user can move
   };
 
   // Handler for user move in vsKomodo mode
