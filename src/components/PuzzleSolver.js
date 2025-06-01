@@ -365,7 +365,10 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
       setGamePosition(chess.fen());
       setMoveHistory([...moveHistory, move.san]);
       // After user move, Komodo moves if not game over
-      if (!chess.game_over()) {
+      const isGameOver = typeof chess.game_over === 'function'
+        ? chess.game_over()
+        : (typeof chess.gameOver === 'function' ? chess.gameOver() : false);
+      if (!isGameOver) {
         handleKomodoMove(chess.fen());
       }
       return true;
