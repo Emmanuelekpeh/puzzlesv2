@@ -3,6 +3,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { saveUserProgress } from '../services/puzzleService';
 import './PuzzleSolver.css';
+import { useNavigate } from 'react-router-dom';
 
 const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
   const [game, setGame] = useState(new Chess());
@@ -27,6 +28,7 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
   const [vsKomodo, setVsKomodo] = useState(false);
   const [komodoColor, setKomodoColor] = useState(null); // 'w' or 'b'
   const [komodoThinking, setKomodoThinking] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (puzzle) {
@@ -488,6 +490,21 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
               <button className="btn btn-secondary" onClick={handleCloseCompletion}>
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {vsKomodo && showCompletion && (
+        <div className="puzzle-complete-overlay">
+          <div className="puzzle-complete-modal">
+            <h2>Game Over</h2>
+            {isCheckmate ? (
+              <p>{komodoColor === game.turn() ? "You were checkmated by Komodo." : "Congratulations, you checkmated Komodo!"}</p>
+            ) : (
+              <p>Game ended.</p>
+            )}
+            <div className="puzzle-complete-actions">
+              <button className="btn btn-primary" onClick={() => navigate('/')}>Return to Puzzles</button>
             </div>
           </div>
         </div>
