@@ -10,29 +10,26 @@ import Dashboard from './pages/Dashboard';
 import About from './pages/About';
 import AccuracyTracker from './components/AccuracyTracker';
 import './App.css';
-import { PuzzleProvider } from './contexts/PuzzleContext';
 
 function App() {
   return (
-    <PuzzleProvider>
-      <Router>
-        <div className="App">
-          <Header />
-          <main className="main-content">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/puzzles" element={<PuzzleBrowser />} />
-              <Route path="/puzzle/:id" element={<PuzzleSolverPage />} />
-              <Route path="/create" element={<PuzzleCreator />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/accuracy" element={<AccuracyTracker />} />
-              <Route path="/about" element={<About />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </PuzzleProvider>
+    <Router>
+      <div className="App">
+        <Header />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/puzzles" element={<PuzzleBrowser />} />
+            <Route path="/puzzle/:id" element={<PuzzleSolverPage />} />
+            <Route path="/create" element={<PuzzleCreator />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/accuracy" element={<AccuracyTracker />} />
+            <Route path="/about" element={<About />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

@@ -25,11 +25,9 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
   const [pendingOpponentMove, setPendingOpponentMove] = useState(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [isCheckmate, setIsCheckmate] = useState(false);
-  const [checkmateBy, setCheckmateBy] = useState(null); // 'user' | 'komodo' | null
   const [vsKomodo, setVsKomodo] = useState(false);
   const [komodoColor, setKomodoColor] = useState(null); // 'w' or 'b'
   const [komodoThinking, setKomodoThinking] = useState(false);
-  const [lastMoveBy, setLastMoveBy] = useState(null); // 'user' | 'opponent' | 'komodo'
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,10 +73,7 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
       if (result) {
         const expectedMoveUci = puzzle.solution[userMoveIndex];
         const userMoveUci = result.from + result.to + (result.promotion ? result.promotion : '');
-        // Debug log for move comparison
-        console.log('User move UCI:', userMoveUci, 'SAN:', result.san, 'Expected UCI:', expectedMoveUci);
         if (userMoveUci === expectedMoveUci) {
-          setLastMoveBy('user');
           let nextMoveIndex = userMoveIndex + 1;
           let sanHistory = [...moveHistory, result.san];
           let lastFen = gameCopy.fen();
@@ -148,7 +143,6 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
           newSanHistory = [...sanHistory, opponentResult.san];
           lastFen = gameCopy.fen();
           nextMoveIndex++;
-          setLastMoveBy('opponent');
         }
         setGame(gameCopy);
         setGamePosition(lastFen);
@@ -332,13 +326,7 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
         const moveObj = uciToMoveObj(uci);
         if (moveObj) chess.move(moveObj);
       }
-      if (chess.isCheckmate()) {
-        setIsCheckmate(true);
-        setCheckmateBy('user');
-      } else {
-        setIsCheckmate(false);
-        setCheckmateBy(null);
-      }
+      setIsCheckmate(chess.isCheckmate());
     }
     // eslint-disable-next-line
   }, [showCompletion]);
@@ -357,7 +345,7 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
     setMoveHistory([...moveHistory]);
     setShowCompletion(false);
     setVsKomodo(true);
-    // Determine Komodo and user color
+    // Determine user and Komodo color
     const userColor = puzzle.orientation === 'white' ? 'w' : 'b';
     const komodoColor = userColor === 'w' ? 'b' : 'w';
     setKomodoColor(komodoColor);
@@ -366,29 +354,23 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
     if (chess.turn() === komodoColor) {
       handleKomodoMove(chess.fen());
     }
+    // If it's user's turn, do nothing; user can move
   };
 
   // Handler for user move in vsKomodo mode
   const handleVsKomodoDrop = (sourceSquare, targetSquare, piece) => {
     if (!vsKomodo || komodoThinking) return false;
-    const userColor = puzzle.orientation === "white" ? "w" : "b";
-    if (game.turn() !== userColor) return false; // Only allow user to move on their turn
     const chess = new Chess(game.fen());
     const move = chess.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
     if (move) {
       setGame(chess);
       setGamePosition(chess.fen());
       setMoveHistory([...moveHistory, move.san]);
-      setLastMoveBy('user');
-      // Check for checkmate after user move
-      if (chess.isCheckmate()) {
-        setIsCheckmate(true);
-        setCheckmateBy('user');
-        setShowCompletion(true);
-        return true;
-      }
       // After user move, Komodo moves if not game over
-      if (!chess.isGameOver()) {
+      const isGameOver = typeof chess.game_over === 'function'
+        ? chess.game_over()
+        : (typeof chess.gameOver === 'function' ? chess.gameOver() : false);
+      if (!isGameOver) {
         handleKomodoMove(chess.fen());
       }
       return true;
@@ -405,36 +387,13 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fen, elo: puzzle.rating || 1500 })
       });
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      const text = await res.text();
-      if (!text) {
-        throw new Error('Empty response from Komodo backend');
-      }
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error('Invalid JSON from Komodo backend: ' + text);
-      }
+      const data = await res.json();
       if (data.move) {
         const chess = new Chess(fen);
         chess.move({ from: data.move.slice(0,2), to: data.move.slice(2,4), promotion: data.move[4] });
         setGame(chess);
         setGamePosition(chess.fen());
         setMoveHistory(m => [...m, chess.history({ verbose: true }).slice(-1)[0].san]);
-        setLastMoveBy('komodo');
-        // Check for checkmate after Komodo move
-        if (chess.isCheckmate()) {
-          setIsCheckmate(true);
-          setCheckmateBy('komodo');
-          setShowCompletion(true);
-          setKomodoThinking(false);
-          return;
-        }
-      } else if (data.error) {
-        setFeedback({ type: 'error', message: 'Komodo error: ' + data.error });
       }
     } catch (e) {
       setFeedback({ type: 'error', message: 'Komodo error: ' + e.message });
@@ -442,23 +401,12 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
     setKomodoThinking(false);
   };
 
-  const getTurnIndicator = () => {
-    if (waitingForOpponent) return "Opponent is thinking...";
-    if (vsKomodo) {
-      const userColor = puzzle.orientation === "white" ? "w" : "b";
-      return game.turn() === userColor ? "Your move" : "Komodo's move";
-    }
-    return game.turn() === "w" ? "White to move" : "Black to move";
-  };
-
   if (!puzzle) {
     return <div className="puzzle-solver">No puzzle selected</div>;
   }
 
   return (
-    <div className="puzzle-solver">
-      <div className="turn-indicator">{getTurnIndicator()}</div>
-      <div className="puzzle-info">
+    <div className="puzzle-solver">      <div className="puzzle-info">
         <h3>Puzzle #{puzzle.id}</h3>
         <div className="puzzle-meta">
           <span className={`difficulty ${puzzle.difficulty.toLowerCase()}`}>
@@ -471,8 +419,7 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
         <p className="puzzle-description">
           {puzzle.description || `Find the best move for ${game.turn() === 'w' ? 'White' : 'Black'}`}
         </p>
-      </div>
-      <div className="puzzle-board">
+      </div>      <div className="puzzle-board">
         <Chessboard
           position={gamePosition}
           onPieceDrop={vsKomodo ? handleVsKomodoDrop : onDrop}
@@ -518,32 +465,7 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
           )}
         </div>
       </div>
-      {isCheckmate && showCompletion && (
-        <div className="puzzle-complete-overlay">
-          <div className="puzzle-complete-modal">
-            <h2>♛ Checkmate!</h2>
-            {checkmateBy === 'user' && (
-              <p>Congratulations, you delivered checkmate and solved the puzzle!</p>
-            )}
-            {checkmateBy === 'komodo' && (
-              <p>You were checkmated by Komodo. Better luck next time!</p>
-            )}
-            {(!checkmateBy || checkmateBy === null) && (
-              <p>Checkmate detected.</p>
-            )}
-            <div className="puzzle-complete-stats">
-              <div><strong>Time:</strong> {formatTime(timeSpent)}</div>
-              <div><strong>Moves:</strong> {moveHistory.length}</div>
-              {puzzle.difficulty && <div><strong>Difficulty:</strong> {puzzle.difficulty}</div>}
-              {puzzle.theme && <div><strong>Theme:</strong> {puzzle.theme}</div>}
-            </div>
-            <div className="puzzle-complete-actions">
-              <button className="btn btn-primary" onClick={() => navigate('/')}>Return to Home</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {!isCheckmate && showCompletion && (
+      {showCompletion && (
         <div className="puzzle-complete-overlay">
           <div className="puzzle-complete-modal">
             <h2>🎉 Puzzle Complete!</h2>
@@ -555,9 +477,11 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
               {puzzle.theme && <div><strong>Theme:</strong> {puzzle.theme}</div>}
             </div>
             <div className="puzzle-complete-actions">
-              <button className="btn btn-success" onClick={handleContinueVsKomodo}>
-                Continue vs Komodo
-              </button>
+              {!isCheckmate && (
+                <button className="btn btn-success" onClick={handleContinueVsKomodo}>
+                  Continue vs Komodo
+                </button>
+              )}
               {onNext && (
                 <button className="btn btn-primary" onClick={() => { setShowCompletion(false); onNext(); }}>
                   Next Puzzle
@@ -566,6 +490,21 @@ const PuzzleSolver = ({ puzzle, onSolved, onNext }) => {
               <button className="btn btn-secondary" onClick={handleCloseCompletion}>
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {vsKomodo && showCompletion && (
+        <div className="puzzle-complete-overlay">
+          <div className="puzzle-complete-modal">
+            <h2>Game Over</h2>
+            {isCheckmate ? (
+              <p>{komodoColor === game.turn() ? "You were checkmated by Komodo." : "Congratulations, you checkmated Komodo!"}</p>
+            ) : (
+              <p>Game ended.</p>
+            )}
+            <div className="puzzle-complete-actions">
+              <button className="btn btn-primary" onClick={() => navigate('/')}>Return to Puzzles</button>
             </div>
           </div>
         </div>
