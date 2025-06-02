@@ -229,6 +229,15 @@
   border: 1px solid #c3e6cb;
 }
 
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid #f5c6cb;
+}
+
 .contact-form {
   margin-top: 1.5rem;
 }
@@ -274,6 +283,15 @@
 
 .submit-btn:hover {
   background: #2980b9;
+}
+
+.submit-btn:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+.submit-btn:disabled:hover {
+  background: #95a5a6;
 }
 
 .contact-alternatives {

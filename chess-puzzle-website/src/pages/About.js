@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import './About.css';
 
 const About = () => {
@@ -8,6 +9,8 @@ const About = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     setFormData({
@@ -16,13 +19,46 @@ const About = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, this would send the data to a backend
-    console.log('Contact form submitted:', formData);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
-    setFormData({ name: '', email: '', message: '' });
+    setLoading(true);
+    setError('');
+
+    // EmailJS configuration - replace these with your actual values
+    const serviceId = process.env.REACT_APP_EMAILJS_SERVICE_ID || 'demo_service';
+    const templateId = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'demo_template';
+    const publicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'demo_key';
+
+    // For demo purposes, if no EmailJS credentials are set up
+    if (serviceId === 'demo_service' || templateId === 'demo_template' || publicKey === 'demo_key') {
+      console.log('Feedback submitted (demo mode):', formData);
+      setLoading(false);
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 5000);
+      setFormData({ name: '', email: '', message: '' });
+      return;
+    }
+
+    try {
+      // Send email using EmailJS
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        message: formData.message,
+        to_email: 'your-email@example.com', // Replace with your email
+      };
+
+      await emailjs.send(serviceId, templateId, templateParams, publicKey);
+      
+      setSubmitted(true);
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (error) {
+      console.error('Failed to send feedback:', error);
+      setError('Failed to send feedback. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -193,13 +229,19 @@ const About = () => {
         <div className="contact-section">
           <h2>Feedback & Suggestions</h2>
           <p>
-            Your feedback helps us improve! While this contact form is currently for demonstration purposes, 
-            we encourage you to share your thoughts and suggestions about the platform.
+            Your feedback helps us improve! Share your thoughts, suggestions, or report any issues 
+            with the chess puzzle platform.
           </p>
           
           {submitted && (
             <div className="success-message">
-              Thank you for your feedback! Your input helps us improve the platform.
+              ✅ Thank you for your feedback! Your input helps us improve the platform.
+            </div>
+          )}
+          
+          {error && (
+            <div className="error-message">
+              ❌ {error}
             </div>
           )}
           
@@ -235,7 +277,9 @@ const About = () => {
                 required
               />
             </div>
-            <button type="submit" className="submit-btn">Share Feedback</button>
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? 'Sending...' : 'Share Feedback'}
+            </button>
           </form>
 
           <div className="contact-alternatives">
