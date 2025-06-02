@@ -178,9 +178,8 @@ const About = () => {
         <div className="technology-section">
           <h2>Technology & Open Source</h2>
           <p>
-            This platform is built with modern web technologies and is completely open source. 
-            We believe in transparency and community collaboration to create the best possible 
-            chess training experience.
+            This platform is built with modern web technologies to provide a fast, responsive, 
+            and engaging chess training experience across all devices.
           </p>
           <div className="tech-stack">
             <div className="tech-item">React.js</div>
@@ -189,18 +188,18 @@ const About = () => {
             <div className="tech-item">Node.js</div>
             <div className="tech-item">PostgreSQL</div>
           </div>
-          <a href="https://github.com/your-repo" className="github-link" target="_blank" rel="noopener noreferrer">
-            View on GitHub →
-          </a>
         </div>
         
         <div className="contact-section">
-          <h2>Get in Touch</h2>
-          <p>Have feedback, suggestions, or want to contribute? We'd love to hear from you!</p>
+          <h2>Feedback & Suggestions</h2>
+          <p>
+            Your feedback helps us improve! While this contact form is currently for demonstration purposes, 
+            we encourage you to share your thoughts and suggestions about the platform.
+          </p>
           
           {submitted && (
             <div className="success-message">
-              Thank you for your message! We'll get back to you soon.
+              Thank you for your feedback! Your input helps us improve the platform.
             </div>
           )}
           
@@ -226,30 +225,26 @@ const About = () => {
               />
             </div>
             <div className="form-group">
-              <label>Message:</label>
+              <label>Feedback:</label>
               <textarea 
                 rows="5" 
                 name="message"
                 value={formData.message}
                 onChange={handleInputChange}
+                placeholder="Share your thoughts, suggestions, or report any issues..."
                 required
               />
             </div>
-            <button type="submit" className="submit-btn">Send Message</button>
+            <button type="submit" className="submit-btn">Share Feedback</button>
           </form>
 
           <div className="contact-alternatives">
-            <h3>Other Ways to Connect</h3>
-            <div className="contact-links">
-              <a href="mailto:contact@chesspuzzles.com" className="contact-link">
-                📧 contact@chesspuzzles.com
-              </a>
-              <a href="https://discord.gg/chess" className="contact-link" target="_blank" rel="noopener noreferrer">
-                💬 Join our Discord
-              </a>
-              <a href="https://twitter.com/chesspuzzles" className="contact-link" target="_blank" rel="noopener noreferrer">
-                🐦 Follow us on Twitter              </a>
-            </div>
+            <h3>Additional Information</h3>
+            <p>
+              We're constantly working to improve the platform based on user feedback. 
+              Your suggestions and puzzle contributions help make this a better learning 
+              experience for the entire chess community.
+            </p>
           </div>
         </div>
       </div>
