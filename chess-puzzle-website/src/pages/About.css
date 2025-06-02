@@ -32,7 +32,7 @@
 }
 
 /* Common section styles */
-.mission-section, .features-section, .team-section, .contact-section,
+.mission-section, .features-section, .team-section, .get-in-touch-section,
 .stats-section, .methodology-section, .technology-section {
   background: white;
   padding: 2rem;
@@ -219,107 +219,33 @@
   background: #555;
 }
 
-/* Contact Section */
-.success-message {
-  background: #d4edda;
-  color: #155724;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  border: 1px solid #c3e6cb;
+/* Get in Touch Section */
+.get-in-touch-section {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
 }
 
-.error-message {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  border: 1px solid #f5c6cb;
-}
-
-.contact-form {
-  margin-top: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+.get-in-touch-section h2 {
   color: #2c3e50;
+  margin-bottom: 1.5rem;
 }
 
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #3498db;
-}
-
-.submit-btn {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 6px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.submit-btn:hover {
-  background: #2980b9;
-}
-
-.submit-btn:disabled {
-  background: #95a5a6;
-  cursor: not-allowed;
-}
-
-.submit-btn:disabled:hover {
-  background: #95a5a6;
-}
-
-.contact-alternatives {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e9ecef;
-}
-
-.contact-alternatives h3 {
-  color: #2c3e50;
+.get-in-touch-section p {
+  color: #666;
+  line-height: 1.6;
   margin-bottom: 1rem;
 }
 
-.contact-links {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.contact-link {
+.get-in-touch-section a {
   color: #3498db;
   text-decoration: none;
-  padding: 0.5rem 0;
-  transition: color 0.3s;
 }
 
-.contact-link:hover {
+.get-in-touch-section a:hover {
   color: #2980b9;
+  text-decoration: underline;
 }
 
 /* Responsive Design */

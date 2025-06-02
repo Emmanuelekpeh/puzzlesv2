@@ -1,66 +1,7 @@
-import React, { useState } from 'react';
-import emailjs from '@emailjs/browser';
+import React from 'react';
 import './About.css';
 
 const About = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    // EmailJS configuration - replace these with your actual values
-    const serviceId = process.env.REACT_APP_EMAILJS_SERVICE_ID || 'demo_service';
-    const templateId = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'demo_template';
-    const publicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'demo_key';
-
-    // For demo purposes, if no EmailJS credentials are set up
-    if (serviceId === 'demo_service' || templateId === 'demo_template' || publicKey === 'demo_key') {
-      console.log('Feedback submitted (demo mode):', formData);
-      setLoading(false);
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 5000);
-      setFormData({ name: '', email: '', message: '' });
-      return;
-    }
-
-    try {
-      // Send email using EmailJS
-      const templateParams = {
-        from_name: formData.name,
-        from_email: formData.email,
-        message: formData.message,
-        to_email: 'your-email@example.com', // Replace with your email
-      };
-
-      await emailjs.send(serviceId, templateId, templateParams, publicKey);
-      
-      setSubmitted(true);
-      setFormData({ name: '', email: '', message: '' });
-      setTimeout(() => setSubmitted(false), 5000);
-    } catch (error) {
-      console.error('Failed to send feedback:', error);
-      setError('Failed to send feedback. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="about">
       <div className="container">
@@ -226,70 +167,17 @@ const About = () => {
           </div>
         </div>
         
-        <div className="contact-section">
-          <h2>Feedback & Suggestions</h2>
+        <div className="get-in-touch-section">
+          <h2>Get in Touch</h2>
           <p>
-            Your feedback helps us improve! Share your thoughts, suggestions, or report any issues 
-            with the chess puzzle platform.
+            Have questions, suggestions, or feedback about our chess puzzle platform? 
+            We'd love to hear from you! Visit our <strong><a href="/contact">Contact page</a></strong> to 
+            send us a message or report any issues.
           </p>
-          
-          {submitted && (
-            <div className="success-message">
-              ✅ Thank you for your feedback! Your input helps us improve the platform.
-            </div>
-          )}
-          
-          {error && (
-            <div className="error-message">
-              ❌ {error}
-            </div>
-          )}
-          
-          <form className="contact-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Name:</label>
-              <input 
-                type="text" 
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required 
-              />
-            </div>
-            <div className="form-group">
-              <label>Email:</label>
-              <input 
-                type="email" 
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required 
-              />
-            </div>
-            <div className="form-group">
-              <label>Feedback:</label>
-              <textarea 
-                rows="5" 
-                name="message"
-                value={formData.message}
-                onChange={handleInputChange}
-                placeholder="Share your thoughts, suggestions, or report any issues..."
-                required
-              />
-            </div>
-            <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? 'Sending...' : 'Share Feedback'}
-            </button>
-          </form>
-
-          <div className="contact-alternatives">
-            <h3>Additional Information</h3>
-            <p>
-              We're constantly working to improve the platform based on user feedback. 
-              Your suggestions and puzzle contributions help make this a better learning 
-              experience for the entire chess community.
-            </p>
-          </div>
+          <p>
+            Your feedback helps us improve the platform and create a better learning experience 
+            for the entire chess community.
+          </p>
         </div>
       </div>
     </div>

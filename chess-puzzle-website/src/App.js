@@ -8,6 +8,7 @@ import PuzzleSolverPage from './pages/PuzzleSolverPage';
 import PuzzleCreator from './pages/PuzzleCreator';
 import Dashboard from './pages/Dashboard';
 import About from './pages/About';
+import Contact from './pages/Contact';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import AccuracyTracker from './components/AccuracyTracker';
@@ -27,6 +28,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/accuracy" element={<AccuracyTracker />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
           </Routes>
