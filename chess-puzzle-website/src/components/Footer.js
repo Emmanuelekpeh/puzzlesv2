@@ -2,6 +2,16 @@ import React, { useEffect } from 'react';
 import './Footer.css';
 
 const Footer = () => {
+  useEffect(() => {
+    try {
+      if (window.adsbygoogle && process.env.NODE_ENV !== 'development') {
+        window.adsbygoogle.push({});
+      }
+    } catch (e) {
+      // Fail silently
+    }
+  }, []);
+
   return (
     <footer className="footer">
       <div className="footer-container">
@@ -27,15 +37,5 @@ const Footer = () => {
     </footer>
   );
 };
-
-useEffect(() => {
-  try {
-    if (window.adsbygoogle && process.env.NODE_ENV !== 'development') {
-      window.adsbygoogle.push({});
-    }
-  } catch (e) {
-    // Fail silently
-  }
-}, []);
 
 export default Footer;
