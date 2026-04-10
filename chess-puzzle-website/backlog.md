@@ -1,28 +1,17 @@
-# Project Backlog
+# Chess Puzzles - Backlog
 
-## Priority 1: Critical Puzzle Issues
+## Done
+- [x] Strip app to single-page minimal puzzle trainer
+- [x] Fix puzzle flow: auto-play opponent setup move, user solves from move 1
+- [x] Fix board orientation (solver sees from their perspective)
+- [x] localStorage tracking: appearances, attempts, solves per puzzle
+- [x] Least-appearance rotation algorithm (all 4000 puzzles cycle before repeating)
+- [x] Minimal dark UI, no fluff pages
+- [x] Per-puzzle stats display (seen/attempted/solved)
+- [x] Global stats in header (seen/total, solves/attempts, solve rate)
 
-- [ ] **Fix incorrect solution moves**
-  - Investigate and correct the logic that determines the solution for each puzzle. Ensure the first move and subsequent moves match the intended solution from the source (e.g., Lichess).
-- [ ] **Ensure correct side to move**
-  - Audit puzzle import and display logic to guarantee the correct side is to move, as indicated by the FEN and move sequence.
-- [ ] **Automated tests for puzzle correctness**
-  - Add tests to verify that the solution and side to move are correct for all imported puzzles.
-
-## Priority 2: User Experience
-
-- [ ] **Hide tags/themes until puzzle is solved**
-  - Update the UI so that puzzle tags (themes) are only shown after the user solves the puzzle, to avoid spoilers.
-- [ ] **Automated tests for tag visibility**
-  - Add tests to ensure tags are not visible before solving and are revealed after.
-
-## Priority 3: Quality and Trust
-
-- [ ] **Expand automated test coverage**
-  - Increase test coverage for puzzle logic, import, and UI/UX flows.
-- [ ] **Add FAQ/About section**
-  - Explain the project's unique value and how it differs from Lichess, addressing user questions and skepticism.
-
----
-
-_Last updated: [date]_ 
+## Future
+- [ ] Hide themes until puzzle is solved (avoid spoilers)
+- [ ] Streak tracking (consecutive solves)
+- [ ] Rating-based difficulty progression
+- [ ] Keyboard shortcuts (R retry, N next)

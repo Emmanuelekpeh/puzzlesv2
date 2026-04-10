@@ -1,41 +1,33 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import PuzzleBrowser from './pages/PuzzleBrowser';
-import PuzzleSolverPage from './pages/PuzzleSolverPage';
-import PuzzleCreator from './pages/PuzzleCreator';
-import Dashboard from './pages/Dashboard';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import AccuracyTracker from './components/AccuracyTracker';
+import React, { useState, useCallback } from 'react';
+import PuzzleSolver from './components/PuzzleSolver';
+import { getNextPuzzle, getGlobalStats } from './services/puzzleService';
 import './App.css';
 
 function App() {
+  const [puzzle, setPuzzle] = useState(() => getNextPuzzle());
+  const [stats, setStats] = useState(() => getGlobalStats());
+
+  const refreshStats = useCallback(() => setStats(getGlobalStats()), []);
+
+  const handleNext = useCallback(() => {
+    setPuzzle(getNextPuzzle());
+    refreshStats();
+  }, [refreshStats]);
+
   return (
-    <Router>
-      <div className="App">
-        <Header />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/puzzles" element={<PuzzleBrowser />} />
-            <Route path="/puzzle/:id" element={<PuzzleSolverPage />} />
-            <Route path="/create" element={<PuzzleCreator />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/accuracy" element={<AccuracyTracker />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+    <div className="app">
+      <header className="app-header">
+        <h1 className="app-title">Chess Puzzles</h1>
+        <div className="app-stats">
+          <span>{stats.puzzlesSeen}/{stats.totalPuzzles} seen</span>
+          <span>{stats.totalSolves}/{stats.totalAttempts} solved</span>
+          <span>{stats.solveRate}% rate</span>
+        </div>
+      </header>
+      <main className="app-main">
+        <PuzzleSolver key={puzzle.id + '-' + stats.totalAppearances} puzzle={puzzle} onNext={handleNext} />
+      </main>
+    </div>
   );
 }
 
