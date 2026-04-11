@@ -138,8 +138,18 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
 
     const g = new Chess(chess.fen());
     const promo = piece?.[1] === 'P' && (to[1] === '8' || to[1] === '1') ? 'q' : undefined;
-    const move = g.move({ from, to, promotion: promo });
-    if (!move) return false;
+
+    let move;
+    try {
+      move = g.move({ from, to, promotion: promo });
+    } catch {
+      setFeedback({ type: 'error', message: 'Illegal move.' });
+      return false;
+    }
+    if (!move) {
+      setFeedback({ type: 'error', message: 'Illegal move.' });
+      return false;
+    }
 
     const userUci = move.from + move.to + (move.promotion || '');
     const expected = puzzle.moves[userMoveIdx];
