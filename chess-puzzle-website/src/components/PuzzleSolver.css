@@ -90,6 +90,12 @@
   border: 1px solid #6b1a1a;
 }
 
+.solver-feedback.hint {
+  background: #3d2e0a;
+  color: #e9a820;
+  border: 1px solid #6b4e1a;
+}
+
 .solver-moves {
   width: 100%;
   min-height: 2rem;
@@ -144,6 +150,15 @@
 
 .btn-retry:hover:not(:disabled) {
   background: #2d4466;
+}
+
+.btn-hint {
+  background: #3d2e0a;
+  color: #e9a820;
+}
+
+.btn-hint:hover:not(:disabled) {
+  background: #4d3a10;
 }
 
 .btn-next {

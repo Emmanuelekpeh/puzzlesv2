@@ -26,6 +26,7 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
   const startRef = useRef(null);
   const [puzzleTrack, setPuzzleTrack] = useState({ appearances: 0, attempts: 0, solves: 0 });
   const [boardWidth, setBoardWidth] = useState(400);
+  const [hintSquare, setHintSquare] = useState(null);
 
   const calcBoardWidth = useCallback(() => {
     const vw = window.innerWidth;
@@ -56,6 +57,7 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
     setMoveHistory([]);
     setTimeSpent(0);
     setTimerActive(false);
+    setHintSquare(null);
     setPuzzleTrack(getPuzzleTrack(puzzle.id));
 
     if (timerRef.current) clearInterval(timerRef.current);
@@ -64,11 +66,21 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
     const setupMove = uciToMove(puzzle.moves[0]);
     if (setupMove) {
       const timer = setTimeout(() => {
-        const result = g.move(setupMove);
-        if (result) {
-          setPosition(g.fen());
-          setMoveHistory([result.san]);
-          setFeedback({ type: 'prompt', message: `Your turn. Find the best move for ${g.turn() === 'w' ? 'White' : 'Black'}.` });
+        try {
+          const result = g.move(setupMove);
+          if (result) {
+            setPosition(g.fen());
+            setMoveHistory([result.san]);
+            setFeedback({ type: 'prompt', message: `Your turn. Find the best move for ${g.turn() === 'w' ? 'White' : 'Black'}.` });
+          } else {
+            setFeedback({ type: 'error', message: 'Broken puzzle. Skipping...' });
+            setTimeout(() => onNext(), 1000);
+            return;
+          }
+        } catch {
+          setFeedback({ type: 'error', message: 'Broken puzzle. Skipping...' });
+          setTimeout(() => onNext(), 1000);
+          return;
         }
         setLocked(false);
         setTimerActive(true);
@@ -102,7 +114,17 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
 
     setTimeout(() => {
       if (oppMove) {
-        const result = g.move(oppMove);
+        let result;
+        try {
+          result = g.move(oppMove);
+        } catch {
+          setFeedback({ type: 'success', message: 'Solved.' });
+          setTimerActive(false);
+          setSolved(true);
+          recordSolve(puzzle.id);
+          setPuzzleTrack(getPuzzleTrack(puzzle.id));
+          return;
+        }
         if (result) {
           const newHistory = [...history, result.san];
           setPosition(g.fen());
@@ -110,7 +132,6 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
           setUserMoveIdx(nextIdx + 1);
 
           if (nextIdx + 1 >= puzzle.moves.length) {
-            // Puzzle solved after opponent's final move
             setTimerActive(false);
             setSolved(true);
             recordSolve(puzzle.id);
@@ -127,6 +148,16 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
     }, 500);
   }, [puzzle]);
 
+  const handleHint = () => {
+    if (locked || solved) return;
+    const nextMove = puzzle.moves[userMoveIdx];
+    if (nextMove) {
+      const fromSq = nextMove.slice(0, 2);
+      setHintSquare(fromSq);
+      setFeedback({ type: 'hint', message: `Look at the piece on ${fromSq}.` });
+    }
+  };
+
   const onDrop = (from, to, piece) => {
     if (locked || solved || !chess) return false;
 
@@ -136,9 +167,20 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
       setPuzzleTrack(getPuzzleTrack(puzzle.id));
     }
 
-    const g = new Chess(chess.fen());
-    const promo = piece?.[1] === 'P' && (to[1] === '8' || to[1] === '1') ? 'q' : undefined;
+    const expected = puzzle.moves[userMoveIdx];
+    const isPromotion = piece?.[1] === 'P' && (to[1] === '8' || to[1] === '1');
 
+    // For promotions: if from/to match the expected answer, use its promotion piece.
+    // This handles underpromotion puzzles (knight, rook, bishop) without a picker.
+    let promo = undefined;
+    if (isPromotion) {
+      const expectedFrom = expected?.slice(0, 2);
+      const expectedTo = expected?.slice(2, 4);
+      const expectedPromo = expected?.length > 4 ? expected[4] : 'q';
+      promo = (from === expectedFrom && to === expectedTo) ? expectedPromo : 'q';
+    }
+
+    const g = new Chess(chess.fen());
     let move;
     try {
       move = g.move({ from, to, promotion: promo });
@@ -152,9 +194,9 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
     }
 
     const userUci = move.from + move.to + (move.promotion || '');
-    const expected = puzzle.moves[userMoveIdx];
 
     if (userUci === expected) {
+      setHintSquare(null);
       const newHistory = [...moveHistory, move.san];
       setChess(g);
       setPosition(g.fen());
@@ -184,7 +226,9 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
     const g = new Chess();
     g.load(puzzle.fen);
     const setupMove = uciToMove(puzzle.moves[0]);
-    if (setupMove) g.move(setupMove);
+    if (setupMove) {
+      try { g.move(setupMove); } catch { /* skip */ }
+    }
 
     setChess(g);
     setPosition(g.fen());
@@ -193,6 +237,7 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
     setLocked(false);
     setSolved(false);
     setAttempted(false);
+    setHintSquare(null);
     setMoveHistory(g.history());
     setTimeSpent(0);
     setTimerActive(true);
@@ -233,6 +278,7 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
           }}
           customDarkSquareStyle={{ backgroundColor: '#779952' }}
           customLightSquareStyle={{ backgroundColor: '#edeed1' }}
+          customSquareStyles={hintSquare ? { [hintSquare]: { boxShadow: 'inset 0 0 0 4px #e9a820' } } : {}}
         />
       </div>
 
@@ -254,6 +300,9 @@ const PuzzleSolver = ({ puzzle, onNext }) => {
       <div className="solver-actions">
         <button className="btn-solver btn-retry" onClick={handleRetry} disabled={locked && !solved}>
           Retry
+        </button>
+        <button className="btn-solver btn-hint" onClick={handleHint} disabled={locked || solved || hintSquare}>
+          Hint
         </button>
         <button className="btn-solver btn-next" onClick={onNext}>
           {solved ? 'Next' : 'Skip'}
