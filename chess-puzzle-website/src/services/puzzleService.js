@@ -2,16 +2,17 @@ import lichessPuzzleData from '../data/lichess_puzzles.json';
 
 const STORAGE_KEY = 'chess_puzzle_tracker';
 
-const puzzles = lichessPuzzleData.puzzles.map(p => ({
-  id: p.id,
-  fen: p.fen,
-  moves: p.moves,
-  rating: p.rating,
-  themes: p.themes,
-  // After moves[0] (opponent setup), the solver plays. 
-  // FEN has the side that plays moves[0]. Solver is the OTHER side.
-  orientation: p.fen.includes(' w ') ? 'black' : 'white',
-}));
+// Filter out broken puzzles: need at least 2 moves (setup + 1 solver move)
+const puzzles = lichessPuzzleData.puzzles
+  .filter(p => p.moves && p.moves.length >= 2)
+  .map(p => ({
+    id: p.id,
+    fen: p.fen,
+    moves: p.moves,
+    rating: p.rating,
+    themes: p.themes,
+    orientation: p.fen.includes(' w ') ? 'black' : 'white',
+  }));
 
 function loadTracker() {
   try {
