@@ -1,0 +1,361 @@
+.performance-insights {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.performance-insights.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  color: #8892b0;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.insight-card {
+  background: #16213e;
+  border-radius: 8px;
+  padding: 1.25rem;
+  border-left: 3px solid;
+  transition: transform 0.2s;
+}
+
+.insight-card:hover {
+  transform: translateY(-2px);
+}
+
+.insight-weakness {
+  border-left-color: #e94560;
+  background: linear-gradient(135deg, #16213e, #1a1a2e);
+}
+
+.insight-progress {
+  border-left-color: #64ffda;
+  background: linear-gradient(135deg, #16213e, #1a1a2e);
+}
+
+.insight-streak {
+  border-left-color: #f5b938;
+  background: linear-gradient(135deg, #16213e, #1a1a2e);
+}
+
+.insight-header {
+  font-size: 0.8rem;
+  color: #8892b0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.insight-message {
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+.theme-performance-section,
+.rating-section,
+.session-history-section {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.performance-insights h3 {
+  margin: 0 0 1.5rem 0;
+  color: #64ffda;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.theme-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #0f3460;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.theme-item:hover {
+  background: #1a2d4d;
+}
+
+.theme-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.theme-name {
+  color: #e0e0e0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.theme-stats {
+  color: #8892b0;
+  font-size: 0.8rem;
+}
+
+.theme-bar {
+  flex: 1;
+  height: 6px;
+  background: #0f3460;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 100px;
+}
+
+.theme-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+.theme-accuracy {
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 45px;
+  text-align: right;
+}
+
+.rating-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+}
+
+.rating-current,
+.rating-change {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #0f3460;
+  border-radius: 8px;
+}
+
+.rating-label {
+  font-size: 0.8rem;
+  color: #8892b0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rating-value {
+  font-size: 2rem;
+  color: #64ffda;
+  font-weight: 700;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #0f3460;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  align-items: center;
+}
+
+.session-date {
+  color: #8892b0;
+  font-size: 0.85rem;
+}
+
+.session-puzzles {
+  color: #e0e0e0;
+}
+
+.session-accuracy {
+  color: #64ffda;
+  font-weight: 600;
+  text-align: right;
+}
+
+.session-time {
+  color: #8892b0;
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.achievements-section {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.achievements-section h4 {
+  margin: 0 0 1rem 0;
+  color: #8892b0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.achievements-unlocked {
+  margin-bottom: 2rem;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.achievement-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #0f3460;
+  border-radius: 8px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.achievement-badge:hover {
+  transform: translateY(-2px);
+}
+
+.achievement-badge.unlocked {
+  border: 1px solid #64ffda;
+}
+
+.achievement-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #64ffda, #3498db);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #16213e;
+  font-weight: 700;
+}
+
+.achievement-badge.unlocked .achievement-icon {
+  box-shadow: 0 4px 12px rgba(100, 255, 218, 0.4);
+}
+
+.achievement-name {
+  color: #64ffda;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.achievement-desc {
+  color: #8892b0;
+  font-size: 0.75rem;
+}
+
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.achievement-progress-item {
+  padding: 0.75rem;
+  background: #0f3460;
+  border-radius: 6px;
+}
+
+.achievement-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.achievement-progress-text {
+  color: #8892b0;
+  font-size: 0.85rem;
+}
+
+.achievement-progress-bar {
+  height: 6px;
+  background: #1a2d4d;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.achievement-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #64ffda, #3498db);
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+  .performance-insights {
+    padding: 1rem 0.5rem;
+  }
+
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .achievement-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .theme-item {
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+  }
+
+  .theme-bar {
+    grid-column: 1 / -1;
+    min-width: 100%;
+  }
+
+  .theme-accuracy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .rating-info {
+    grid-template-columns: 1fr;
+  }
+
+  .session-item {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .session-date {
+    grid-column: 1 / -1;
+  }
+}

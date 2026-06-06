@@ -29,6 +29,14 @@ body {
   padding: 0.75rem 1.5rem;
   background: #16213e;
   border-bottom: 1px solid #0f3460;
+  gap: 1rem;
+}
+
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
 }
 
 .app-title {
@@ -44,6 +52,29 @@ body {
   font-size: 0.8rem;
   color: #8892b0;
   font-variant-numeric: tabular-nums;
+  align-items: center;
+}
+
+.insights-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0f3460;
+  border: 1px solid #64ffda;
+  color: #64ffda;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.insights-toggle:hover {
+  background: #64ffda;
+  color: #16213e;
+  transform: scale(1.1);
 }
 
 .app-main {
@@ -61,12 +92,21 @@ body {
     text-align: center;
   }
 
+  .app-header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app-title {
+    font-size: 1rem;
+  }
+
   .app-stats {
     gap: 1rem;
     font-size: 0.75rem;
   }
 
   .app-main {
-    padding: 1rem 0.5rem;
+    padding: 0.5rem 0.25rem;
   }
 }
