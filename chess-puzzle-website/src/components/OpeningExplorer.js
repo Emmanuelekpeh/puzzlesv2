@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { fetchOpeningPosition, getOpeningName } from '../services/openingService';
+import { fetchOpeningPosition, getOpeningName, countPuzzlesForOpening } from '../services/openingService';
 import { addToRepertoire, getRepertoire } from '../services/indexedDBService';
 import './OpeningExplorer.css';
 
@@ -17,6 +17,7 @@ const OpeningExplorer = ({ onStartTraining }) => {
   const [repertoire, setRepertoire] = useState([]);
   const [showStats, setShowStats] = useState(true);
   const [sortBy, setSortBy] = useState('popularity'); // 'popularity', 'white', 'draws', 'black'
+  const [puzzleCount, setPuzzleCount] = useState(0);
 
   // Calculate board width
   useEffect(() => {
@@ -49,6 +50,18 @@ const OpeningExplorer = ({ onStartTraining }) => {
       if (data) {
         setAvailableMoves(data.moves || []);
         setOpeningInfo(data.opening || { name: 'Unknown Position', eco: '' });
+      }
+      
+      // Count puzzles for this opening (if we have moves)
+      if (moveSequence.length >= 3) {
+        const count = await countPuzzlesForOpening(
+          data?.opening?.eco || '',
+          data?.opening?.name || '',
+          moveSequence
+        );
+        setPuzzleCount(count);
+      } else {
+        setPuzzleCount(0);
       }
     } catch (error) {
       console.error('Error fetching moves:', error);
@@ -200,6 +213,19 @@ const OpeningExplorer = ({ onStartTraining }) => {
                 >
                   🎯 Train This Line
                 </button>
+                {puzzleCount > 0 && (
+                  <div className="puzzle-connection">
+                    <span className="puzzle-badge">
+                      {puzzleCount} puzzles from this opening
+                    </span>
+                    <button 
+                      className="btn-puzzles"
+                      onClick={() => window.alert('Puzzle filtering coming soon!')}
+                    >
+                      📊 Practice Puzzles
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

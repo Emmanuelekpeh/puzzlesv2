@@ -23,14 +23,17 @@ export async function fetchOpeningPosition(fen, moves = [], options = {}) {
     database = 'lichess' // 'lichess', 'masters', or 'player'
   } = options;
 
-  const params = new URLSearchParams({
-    variant,
-    fen: fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-  });
-
-  // Add array parameters
-  speeds.forEach(speed => params.append('speeds[]', speed));
-  ratings.forEach(rating => params.append('ratings[]', rating));
+  const params = new URLSearchParams();
+  params.append('variant', variant);
+  
+  // Don't send FEN for starting position, let API use default
+  if (fen && fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+    params.append('fen', fen);
+  }
+  
+  // Add array parameters - Lichess expects comma-separated values, not multiple params
+  params.append('speeds', speeds.join(','));
+  params.append('ratings', ratings.join(','));
   
   // Add move sequence if provided
   if (moves.length > 0) {
@@ -40,18 +43,36 @@ export async function fetchOpeningPosition(fen, moves = [], options = {}) {
   if (since) params.append('since', since);
 
   const url = `${EXPLORER_BASE}/${database}?${params.toString()}`;
+  
+  console.log('Fetching opening data from:', url);
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API error ${response.status}:`, errorText);
       throw new Error(`API error: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('Opening data received:', data);
     return parseOpeningResponse(data);
   } catch (error) {
     console.error('Error fetching opening data:', error);
-    return null;
+    // Return empty data instead of null to avoid breaking UI
+    return {
+      moves: [],
+      opening: { eco: 'A00', name: 'Starting Position' },
+      totalGames: 0,
+      recentGames: [],
+      topGames: []
+    };
   }
 }
 
@@ -252,11 +273,67 @@ export function getMoveExplanation(openingName, moveIndex, move) {
   }
 }
 
+/**
+ * Find puzzles that arose from a specific opening
+ * @param {string} eco - ECO code (e.g., "C50")
+ * @param {string} openingName - Opening name
+ * @param {Array} openingMoves - Array of moves from the opening
+ * @returns {Promise<Array>} Array of puzzle IDs
+ */
+export async function findPuzzlesFromOpening(eco, openingName, openingMoves = []) {
+  // This connects openings to puzzles - the killer feature!
+  const { getAllPuzzles } = await import('./puzzleService');
+  const puzzles = await getAllPuzzles();
+  
+  // Strategy 1: Filter by opening theme
+  let matches = puzzles.filter(puzzle => {
+    // Check if puzzle themes include 'opening'
+    if (puzzle.themes && puzzle.themes.some(t => t.toLowerCase().includes('opening'))) {
+      return true;
+    }
+    
+    // Check if puzzle FEN starts with moves from this opening
+    if (openingMoves.length > 0 && puzzle.fen) {
+      const game = new Chess();
+      try {
+        // Play opening moves
+        for (let move of openingMoves.slice(0, Math.min(5, openingMoves.length))) {
+          game.move(move);
+        }
+        const openingFen = game.fen().split(' ').slice(0, 4).join(' ');
+        const puzzleFen = puzzle.fen.split(' ').slice(0, 4).join(' ');
+        
+        // Check if puzzleFEN matches or is close to opening FEN
+        if (puzzleFen === openingFen) {
+          return true;
+        }
+      } catch (e) {
+        // Invalid move sequence
+      }
+    }
+    
+    return false;
+  });
+  
+  // Return up to 100 puzzles
+  return matches.slice(0, 100).map(p => p.id);
+}
+
+/**
+ * Get count of puzzles for an opening
+ */
+export async function countPuzzlesForOpening(eco, openingName, openingMoves) {
+  const puzzles = await findPuzzlesFromOpening(eco, openingName, openingMoves);
+  return puzzles.length;
+}
+
 export default {
   fetchOpeningPosition,
   getOpeningName,
   getPopularOpenings,
   generateTrainingLines,
   OpeningLine,
-  getMoveExplanation
+  getMoveExplanation,
+  findPuzzlesFromOpening,
+  countPuzzlesForOpening
 };
