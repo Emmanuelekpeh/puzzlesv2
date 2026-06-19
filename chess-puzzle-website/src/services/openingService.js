@@ -20,43 +20,56 @@ export async function fetchOpeningPosition(fen, moves = [], options = {}) {
     speeds = ['blitz', 'rapid', 'classical'],
     ratings = ['1600', '1800', '2000', '2200', '2500'],
     since = '2015-01',
-    database = 'lichess' // 'lichess', 'masters', or 'player'
+    database = 'masters' // Use masters database - more reliable, no auth needed
   } = options;
 
   const params = new URLSearchParams();
-  params.append('variant', variant);
   
-  // Don't send FEN for starting position, let API use default
+  // Masters database doesn't use speeds/ratings/since - it's just master games
+  // Lichess database uses those params but requires auth now
+  
+  // Don't send FEN for starting position, let API use default  
   if (fen && fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
     params.append('fen', fen);
   }
-  
-  // Add array parameters - Lichess expects comma-separated values, not multiple params
-  params.append('speeds', speeds.join(','));
-  params.append('ratings', ratings.join(','));
   
   // Add move sequence if provided
   if (moves.length > 0) {
     params.append('play', moves.join(','));
   }
-
-  if (since) params.append('since', since);
+  
+  // Only add these params for lichess database (not masters)
+  if (database === 'lichess') {
+    params.append('speeds', speeds.join(','));
+    params.append('ratings', ratings.join(','));
+    if (since) params.append('since', since);
+  }
 
   const url = `${EXPLORER_BASE}/${database}?${params.toString()}`;
   
   console.log('Fetching opening data from:', url);
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
+    // Simple fetch without extra headers - Lichess API is public
+    const response = await fetch(url);
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`API error ${response.status}:`, errorText);
+      
+      // If it's a 401, try the old domain as fallback
+      if (response.status === 401) {
+        console.log('Trying with master database as fallback...');
+        const fallbackUrl = url.replace('/lichess', '/masters');
+        const fallbackResponse = await fetch(fallbackUrl);
+        
+        if (fallbackResponse.ok) {
+          const data = await fallbackResponse.json();
+          console.log('Fallback data received from masters database');
+          return parseOpeningResponse(data);
+        }
+      }
+      
       throw new Error(`API error: ${response.status}`);
     }
     
