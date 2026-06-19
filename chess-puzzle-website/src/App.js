@@ -4,6 +4,9 @@ import SessionTracker from './components/SessionTracker';
 import TrainingModeSelector from './components/TrainingModeSelector';
 import PerformanceInsights from './components/PerformanceInsights';
 import AchievementNotification from './components/AchievementNotification';
+import OpeningSelector from './components/OpeningSelector';
+import OpeningExplorer from './components/OpeningExplorer';
+import OpeningTrainer from './components/OpeningTrainer';
 import { getNextPuzzle, getGlobalStatsFormatted } from './services/puzzleService';
 import { migrateToIndexedDB, needsMigration } from './services/migrationService';
 import { initializeAchievements, updateStreak } from './services/achievementService';
@@ -17,6 +20,8 @@ function App() {
   const [trainingMode, setTrainingMode] = useState({ mode: 'standard', config: {} });
   const [showInsights, setShowInsights] = useState(false);
   const [achievementQueue, setAchievementQueue] = useState([]);
+  const [openingMode, setOpeningMode] = useState('selector'); // 'selector', 'explore', 'train'
+  const [selectedOpening, setSelectedOpening] = useState(null);
 
   useEffect(() => {
     const initialize = async () => {
@@ -69,6 +74,38 @@ function App() {
 
   const handleModeChange = useCallback((mode, config) => {
     setTrainingMode({ mode, config });
+    // Reset opening state when switching modes
+    if (mode === 'openings') {
+      setOpeningMode('selector');
+      setSelectedOpening(null);
+    }
+  }, []);
+
+  const handleOpeningModeChange = useCallback((mode) => {
+    setOpeningMode(mode);
+    if (mode === 'selector') {
+      setSelectedOpening(null);
+    }
+  }, []);
+
+  const handleOpeningSelect = useCallback((opening) => {
+    setSelectedOpening(opening);
+    setOpeningMode('train');
+  }, []);
+
+  const handleStartTraining = useCallback((moves, openingInfo) => {
+    setSelectedOpening({
+      moves,
+      name: openingInfo.name,
+      eco: openingInfo.eco,
+      color: moves.length % 2 === 1 ? 'white' : 'black'
+    });
+    setOpeningMode('train');
+  }, []);
+
+  const handleTrainingComplete = useCallback(() => {
+    setOpeningMode('selector');
+    setSelectedOpening(null);
   }, []);
 
   const toggleInsights = useCallback(() => {
@@ -147,7 +184,25 @@ function App() {
       </header>
       <SessionTracker />
       
-      {showInsights ? (
+      {trainingMode.mode === 'openings' ? (
+        <main className="app-main">
+          {openingMode === 'selector' && (
+            <OpeningSelector
+              onSelect={handleOpeningSelect}
+              onModeChange={handleOpeningModeChange}
+            />
+          )}
+          {openingMode === 'explore' && (
+            <OpeningExplorer onStartTraining={handleStartTraining} />
+          )}
+          {openingMode === 'train' && selectedOpening && (
+            <OpeningTrainer
+              line={selectedOpening}
+              onComplete={handleTrainingComplete}
+            />
+          )}
+        </main>
+      ) : showInsights ? (
         <main className="app-main">
           <PerformanceInsights />
         </main>

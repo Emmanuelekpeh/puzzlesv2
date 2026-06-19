@@ -364,6 +364,60 @@
 
 ---
 
+## 📖 SPRINT 7: Opening Training System (NEW!) ⏳ IN PROGRESS
+**Goal:** Enable comprehensive opening learning and practice
+
+### P1 - Core Infrastructure ✅ COMPLETE
+- [x] Research Lichess Opening Explorer API
+- [x] Design opening data schema (IndexedDB)
+- [x] Create openingService.js with API integration
+- [x] Add opening tables to IndexedDB (v2 upgrade)
+- [x] Opening progress tracking with mastery levels
+- [x] Repertoire management system
+- [x] API response caching
+
+### P1 - Opening Explorer Component ✅ COMPLETE
+- [x] Interactive opening tree browser
+- [x] Move statistics and popularity
+- [x] Win/Draw/Loss percentages display
+- [x] Sort by popularity, white wins, draws, black wins
+- [x] Add lines to personal repertoire
+- [x] "Train This Line" quick action
+- [x] Mobile responsive design
+
+### P1 - Opening Trainer (Guess the Move) ✅ COMPLETE
+- [x] Interactive "Guess the Move" drill mode
+- [x] Real-time feedback (correct/incorrect)
+- [x] Move explanations based on opening type
+- [x] Progress tracking per opening line
+- [x] Hint system (highlight piece)
+- [x] Show book move option
+- [x] Mastery level calculation (0-100%)
+- [x] Both colors support
+
+### P2 - Integration & UI
+- [ ] Add "Openings" tab to TrainingModeSelector
+- [ ] Create OpeningSelector UI (pick opening to practice)
+- [ ] Opening stats dashboard in PerformanceInsights
+- [ ] Repertoire viewer/manager page
+- [ ] Practice mode: White openings, Black openings, Both
+
+### P2 - Guided Playthrough
+- [ ] Auto-play opening lines with explanations
+- [ ] Show move purpose and tactical ideas
+- [ ] Highlight key squares
+- [ ] User can pause and explore
+
+### P3 - Advanced Features
+- [ ] Spaced repetition for weak opening lines
+- [ ] Opening quiz mode (random positions)
+- [ ] Popular traps and tricks section
+- [ ] Opening recommendations based on style
+- [ ] Export/import repertoire
+- [ ] Mixed training mode (puzzles + openings)
+
+---
+
 ## 🚀 FUTURE / NICE TO HAVE
 - [ ] Blitz Mode (30 seconds per puzzle)
 - [ ] Leaderboards (local, privacy-friendly)
@@ -375,6 +429,9 @@
 - [ ] Multi-device sync (requires backend)
 - [ ] Progressive Web App (offline support)
 - [ ] Puzzle difficulty prediction improvements
+- [ ] Deep opening database (moves 15-25)
+- [ ] Personal opening statistics vs global
+- [ ] Opening mistake detector
 
 ---
 

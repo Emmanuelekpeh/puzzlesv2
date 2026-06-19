@@ -1,0 +1,224 @@
+.opening-selector {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.opening-selector h2 {
+  color: #64ffda;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.selector-subtitle {
+  text-align: center;
+  color: #8892b0;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+.selector-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.selector-card {
+  background: #16213e;
+  border: 2px solid #0f3460;
+  border-radius: 12px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.selector-card:hover {
+  border-color: #64ffda;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(100, 255, 218, 0.2);
+}
+
+.card-icon {
+  font-size: 3rem;
+}
+
+.selector-card h3 {
+  color: #e0e0e0;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.selector-card p {
+  color: #8892b0;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.card-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #64ffda;
+  color: #16213e;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.color-card .card-icon {
+  font-size: 4rem;
+}
+
+.repertoire-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.repertoire-item {
+  background: #16213e;
+  border: 2px solid #0f3460;
+  border-radius: 8px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.repertoire-item:hover {
+  border-color: #64ffda;
+  transform: translateX(4px);
+}
+
+.opening-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.eco-badge {
+  background: #0f3460;
+  color: #64ffda;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.opening-header h4 {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 1.1rem;
+}
+
+.opening-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #8892b0;
+}
+
+.divider {
+  color: #5a6785;
+}
+
+.mastery {
+  color: #64ffda;
+  font-weight: 600;
+}
+
+.accuracy {
+  font-weight: 600;
+}
+
+.accuracy.good {
+  color: #81b64c;
+}
+
+.accuracy.needs-work {
+  color: #e9a820;
+}
+
+.selector-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.back-to-puzzles,
+.back-button,
+.btn-secondary {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-to-puzzles,
+.back-button {
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #3498db;
+}
+
+.back-to-puzzles:hover,
+.back-button:hover {
+  background: #1a2d4d;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #64ffda;
+  color: #16213e;
+}
+
+.btn-secondary:hover {
+  background: #7ffff0;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .opening-selector {
+    padding: 1rem 0.5rem;
+  }
+
+  .opening-selector h2 {
+    font-size: 1.5rem;
+  }
+
+  .selector-options {
+    grid-template-columns: 1fr;
+  }
+
+  .selector-card {
+    padding: 1.5rem;
+  }
+
+  .card-icon {
+    font-size: 2.5rem;
+  }
+
+  .color-card .card-icon {
+    font-size: 3rem;
+  }
+}

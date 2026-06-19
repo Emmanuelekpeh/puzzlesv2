@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'ChessPuzzlesDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented for opening training tables
 
 let dbInstance = null;
 
@@ -43,6 +43,28 @@ export async function initDB() {
       // Store 6: sessions (active training session)
       if (!db.objectStoreNames.contains('sessions')) {
         db.createObjectStore('sessions', { keyPath: 'id' });
+      }
+
+      // Store 7: openingProgress (per-opening-line tracking)
+      if (!db.objectStoreNames.contains('openingProgress')) {
+        const openingProgressStore = db.createObjectStore('openingProgress', { keyPath: 'lineId' });
+        openingProgressStore.createIndex('eco', 'eco');
+        openingProgressStore.createIndex('color', 'color');
+        openingProgressStore.createIndex('masteryLevel', 'masteryLevel');
+        openingProgressStore.createIndex('lastPracticedDate', 'lastPracticedDate');
+      }
+
+      // Store 8: openingRepertoire (user's saved repertoire)
+      if (!db.objectStoreNames.contains('openingRepertoire')) {
+        const repertoireStore = db.createObjectStore('openingRepertoire', { keyPath: 'id' });
+        repertoireStore.createIndex('color', 'color');
+        repertoireStore.createIndex('name', 'name');
+      }
+
+      // Store 9: openingCache (cached Lichess API responses)
+      if (!db.objectStoreNames.contains('openingCache')) {
+        const cacheStore = db.createObjectStore('openingCache', { keyPath: 'key' });
+        cacheStore.createIndex('timestamp', 'timestamp');
       }
     },
   });
@@ -284,4 +306,174 @@ export async function clearAllData() {
   await db.clear('collections');
   await db.clear('achievements');
   await db.clear('sessions');
+  await db.clear('openingProgress');
+  await db.clear('openingRepertoire');
+  await db.clear('openingCache');
+}
+
+// ============ OPENING TRAINING FUNCTIONS ============
+
+/**
+ * Get opening line progress
+ */
+export async function getOpeningProgress(lineId) {
+  const db = await initDB();
+  const progress = await db.get('openingProgress', lineId);
+  
+  if (!progress) {
+    return {
+      lineId,
+      eco: '',
+      name: '',
+      color: 'white',
+      attempts: 0,
+      correctMoves: 0,
+      incorrectMoves: 0,
+      accuracy: 0,
+      masteryLevel: 0, // 0-100
+      lastPracticedDate: null,
+      moveAccuracy: {}, // { moveIndex: accuracy }
+      weakMoves: [] // Array of move indices with < 70% accuracy
+    };
+  }
+  
+  return progress;
+}
+
+/**
+ * Update opening line progress
+ */
+export async function updateOpeningProgress(lineId, updates) {
+  const db = await initDB();
+  const current = await getOpeningProgress(lineId);
+  
+  const updated = {
+    ...current,
+    ...updates,
+    lastPracticedDate: Date.now()
+  };
+  
+  // Recalculate accuracy
+  if (updated.attempts > 0) {
+    updated.accuracy = ((updated.correctMoves / updated.attempts) * 100).toFixed(1);
+  }
+  
+  // Calculate mastery level (0-100)
+  // Based on accuracy and number of successful attempts
+  const accuracyScore = parseFloat(updated.accuracy) || 0;
+  const volumeScore = Math.min(updated.correctMoves * 2, 40); // Max 40 points for volume
+  updated.masteryLevel = Math.min(Math.round((accuracyScore * 0.6) + volumeScore), 100);
+  
+  await db.put('openingProgress', updated);
+  return updated;
+}
+
+/**
+ * Get all opening progress, optionally filtered by color
+ */
+export async function getAllOpeningProgress(color = null) {
+  const db = await initDB();
+  const allProgress = await db.getAll('openingProgress');
+  
+  if (color) {
+    return allProgress.filter(p => p.color === color);
+  }
+  
+  return allProgress;
+}
+
+/**
+ * Add opening to repertoire
+ */
+export async function addToRepertoire(opening) {
+  const db = await initDB();
+  const id = opening.id || `${opening.eco}_${opening.color}_${Date.now()}`;
+  
+  const repertoireItem = {
+    id,
+    name: opening.name,
+    eco: opening.eco,
+    color: opening.color,
+    moves: opening.moves || [],
+    variations: opening.variations || [],
+    addedDate: Date.now(),
+    notes: opening.notes || '',
+    priority: opening.priority || 'medium' // low, medium, high
+  };
+  
+  await db.put('openingRepertoire', repertoireItem);
+  return repertoireItem;
+}
+
+/**
+ * Get user's repertoire
+ */
+export async function getRepertoire(color = null) {
+  const db = await initDB();
+  const repertoire = await db.getAll('openingRepertoire');
+  
+  if (color) {
+    return repertoire.filter(item => item.color === color);
+  }
+  
+  return repertoire;
+}
+
+/**
+ * Remove from repertoire
+ */
+export async function removeFromRepertoire(id) {
+  const db = await initDB();
+  await db.delete('openingRepertoire', id);
+}
+
+/**
+ * Cache opening data from API
+ */
+export async function cacheOpeningData(key, data, ttl = 86400000) { // 24 hours default
+  const db = await initDB();
+  
+  await db.put('openingCache', {
+    key,
+    data,
+    timestamp: Date.now(),
+    expiresAt: Date.now() + ttl
+  });
+}
+
+/**
+ * Get cached opening data
+ */
+export async function getCachedOpeningData(key) {
+  const db = await initDB();
+  const cached = await db.get('openingCache', key);
+  
+  if (!cached) return null;
+  
+  // Check if expired
+  if (cached.expiresAt < Date.now()) {
+    await db.delete('openingCache', key);
+    return null;
+  }
+  
+  return cached.data;
+}
+
+/**
+ * Clear expired cache entries
+ */
+export async function clearExpiredCache() {
+  const db = await initDB();
+  const allCached = await db.getAll('openingCache');
+  const now = Date.now();
+  
+  const expired = allCached.filter(item => item.expiresAt < now);
+  
+  const tx = db.transaction('openingCache', 'readwrite');
+  await Promise.all([
+    ...expired.map(item => tx.store.delete(item.key)),
+    tx.done
+  ]);
+  
+  return expired.length;
 }

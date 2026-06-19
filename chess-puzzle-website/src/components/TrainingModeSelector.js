@@ -29,6 +29,11 @@ const TrainingModeSelector = ({ currentMode, onModeChange }) => {
       description: 'Adaptive difficulty with spaced repetition'
     },
     {
+      id: 'openings',
+      name: 'Openings',
+      description: 'Learn and practice chess openings'
+    },
+    {
       id: 'failed',
       name: 'Review Failed',
       description: `Practice what you struggled with (${failedCount})`,
