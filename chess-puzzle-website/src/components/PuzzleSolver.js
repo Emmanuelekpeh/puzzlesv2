@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import confetti from 'canvas-confetti';
+import { useSwipeable } from 'react-swipeable';
 import { recordAttempt, recordSolve, getPuzzleTrack } from '../services/puzzleService';
 import { analyzeWrongMove } from '../services/errorDetectionService';
 import { checkAchievements } from '../services/achievementService';
@@ -58,6 +59,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
   const [playingSolution, setPlayingSolution] = useState(false);
   const [solutionMoveIdx, setSolutionMoveIdx] = useState(0);
   const solutionTimerRef = useRef(null);
+  const [swipeIndicator, setSwipeIndicator] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('chessTheme', boardTheme);
@@ -416,8 +418,8 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
       const isCapture = move.flags.includes('c') || move.flags.includes('e');
       options[move.to] = {
         background: isCapture 
-          ? 'radial-gradient(transparent 0%, transparent 79%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.3) 100%)'
-          : 'radial-gradient(rgba(0,0,0,0.3) 19%, transparent 20%)',
+          ? 'radial-gradient(transparent 0%, transparent 75%, rgba(100, 255, 218, 0.7) 76%, rgba(100, 255, 218, 0.7) 100%)'
+          : 'radial-gradient(rgba(100, 255, 218, 0.5) 22%, transparent 23%)',
         borderRadius: '50%'
       };
     });
@@ -581,6 +583,31 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     }
   };
 
+  // Swipe gesture handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (!locked && !solved && !showAnalysis) {
+        handleHint();
+        setSwipeIndicator('hint');
+        setTimeout(() => setSwipeIndicator(null), 500);
+      }
+    },
+    onSwipedRight: () => {
+      if (!showAnalysis) {
+        if (solved) {
+          onNext();
+        } else {
+          handleSkip();
+        }
+        setSwipeIndicator('next');
+        setTimeout(() => setSwipeIndicator(null), 500);
+      }
+    },
+    preventScrollOnSwipe: true,
+    trackMouse: false,
+    delta: 50
+  });
+
   // Keyboard shortcuts state ref to avoid stale closures
   const stateRef = useRef({ solved, locked, onNext, handleRetry, handleHint });
   useEffect(() => {
@@ -659,14 +686,15 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
   if (moveFrom) {
     customSquareStyles[moveFrom] = {
       ...customSquareStyles[moveFrom],
-      backgroundColor: 'rgba(255, 255, 0, 0.4)'
+      backgroundColor: 'rgba(100, 255, 218, 0.4)',
+      boxShadow: 'inset 0 0 0 3px rgba(100, 255, 218, 0.8)'
     };
   }
 
   const displayPosition = reviewIdx !== null ? (reviewIdx === -1 ? puzzle.fen : historyFens[reviewIdx]) : position;
 
   return (
-    <div className="solver">
+    <div className="solver" {...swipeHandlers}>
       <div className="solver-info">
         <div className="solver-meta">
           <span className="meta-rating">{puzzle.rating}</span>
@@ -765,6 +793,12 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
           onRetry={handleRetry}
           onNext={onNext}
         />
+      )}
+
+      {swipeIndicator && (
+        <div className={`swipe-indicator swipe-${swipeIndicator}`}>
+          {swipeIndicator === 'hint' ? '← Hint' : 'Next →'}
+        </div>
       )}
     </div>
   );
