@@ -45,6 +45,16 @@ export async function getNextPuzzle(mode = 'standard', modeConfig = {}) {
       candidates = puzzles.filter(p => p.rating >= min && p.rating <= max);
       break;
       
+    case 'opening-puzzles':
+      // Filter puzzles by opening (Opening → Puzzle pipeline)
+      if (modeConfig.puzzleIds && modeConfig.puzzleIds.length > 0) {
+        candidates = puzzles.filter(p => modeConfig.puzzleIds.includes(p.id));
+      } else {
+        // Fallback to standard if no puzzle IDs provided
+        candidates = puzzles;
+      }
+      break;
+      
     case 'standard':
     default:
       // Adaptive difficulty + spaced repetition

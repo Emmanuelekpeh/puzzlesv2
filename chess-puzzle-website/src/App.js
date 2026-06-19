@@ -108,6 +108,35 @@ function App() {
     setSelectedOpening(null);
   }, []);
 
+  const handlePracticePuzzles = useCallback(async (openingInfo, moveSequence) => {
+    // Get puzzle IDs for this opening
+    const { findPuzzlesFromOpening } = await import('./services/openingService');
+    const puzzleIds = await findPuzzlesFromOpening(
+      openingInfo.eco,
+      openingInfo.name,
+      moveSequence
+    );
+    
+    if (puzzleIds.length === 0) {
+      alert('No puzzles found for this opening. Try exploring more moves!');
+      return;
+    }
+    
+    // Switch to opening-puzzles mode
+    setTrainingMode({
+      mode: 'opening-puzzles',
+      config: { 
+        puzzleIds,
+        openingName: openingInfo.name,
+        openingEco: openingInfo.eco
+      }
+    });
+    
+    // Load first puzzle
+    const nextPuzzle = await getNextPuzzle('opening-puzzles', { puzzleIds });
+    setPuzzle(nextPuzzle);
+  }, []);
+
   const toggleInsights = useCallback(() => {
     setShowInsights(prev => !prev);
   }, []);
@@ -166,9 +195,14 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-header-left">
-          <h1 className="app-title">Chess Puzzles</h1>
+          <h1 className="app-title">
+            {trainingMode.mode === 'opening-puzzles' && trainingMode.config.openingName 
+              ? `${trainingMode.config.openingName} Puzzles`
+              : 'Chess Puzzles'
+            }
+          </h1>
           <TrainingModeSelector 
-            currentMode={trainingMode.mode} 
+            currentMode={trainingMode.mode === 'opening-puzzles' ? 'openings' : trainingMode.mode} 
             onModeChange={handleModeChange} 
           />
         </div>
@@ -193,7 +227,10 @@ function App() {
             />
           )}
           {openingMode === 'explore' && (
-            <OpeningExplorer onStartTraining={handleStartTraining} />
+            <OpeningExplorer 
+              onStartTraining={handleStartTraining}
+              onPracticePuzzles={handlePracticePuzzles}
+            />
           )}
           {openingMode === 'train' && selectedOpening && (
             <OpeningTrainer
@@ -201,6 +238,42 @@ function App() {
               onComplete={handleTrainingComplete}
             />
           )}
+        </main>
+      ) : trainingMode.mode === 'opening-puzzles' ? (
+        <main className="app-main">
+          {trainingMode.config.openingEco && (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '0.5rem', 
+              background: '#0f3460',
+              color: '#64ffda',
+              borderRadius: '6px',
+              marginBottom: '0.5rem',
+              fontSize: '0.9rem',
+              fontWeight: 600
+            }}>
+              <span style={{ background: '#16213e', padding: '0.25rem 0.6rem', borderRadius: '4px', marginRight: '0.5rem' }}>
+                {trainingMode.config.openingEco}
+              </span>
+              Practicing puzzles from {trainingMode.config.openingName}
+              <button 
+                onClick={() => handleModeChange('openings', {})}
+                style={{
+                  marginLeft: '1rem',
+                  padding: '0.25rem 0.6rem',
+                  background: '#16213e',
+                  border: '1px solid #64ffda',
+                  borderRadius: '4px',
+                  color: '#64ffda',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem'
+                }}
+              >
+                ← Back to Openings
+              </button>
+            </div>
+          )}
+          <PuzzleSolver key={puzzle.id} puzzle={puzzle} onNext={handleNext} refreshStats={refreshStats} />
         </main>
       ) : showInsights ? (
         <main className="app-main">

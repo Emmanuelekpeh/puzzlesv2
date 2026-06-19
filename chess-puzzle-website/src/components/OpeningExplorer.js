@@ -5,7 +5,7 @@ import { fetchOpeningPosition, getOpeningName, countPuzzlesForOpening } from '..
 import { addToRepertoire, getRepertoire } from '../services/indexedDBService';
 import './OpeningExplorer.css';
 
-const OpeningExplorer = ({ onStartTraining }) => {
+const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
   const [chess] = useState(new Chess());
   const [position, setPosition] = useState(chess.fen());
   const [moveHistory, setMoveHistory] = useState([]);
@@ -220,9 +220,9 @@ const OpeningExplorer = ({ onStartTraining }) => {
                     </span>
                     <button 
                       className="btn-puzzles"
-                      onClick={() => window.alert('Puzzle filtering coming soon!')}
+                      onClick={() => onPracticePuzzles && onPracticePuzzles(openingInfo, moveSequence)}
                     >
-                      📊 Practice Puzzles
+                      📊 Practice Puzzles ({puzzleCount})
                     </button>
                   </div>
                 )}
