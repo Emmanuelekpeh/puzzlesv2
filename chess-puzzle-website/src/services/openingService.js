@@ -201,7 +201,9 @@ export async function fetchOpeningPosition(fen, moves = [], options = {}) {
 
 /**
  * Parse Lichess API response
+ * Currently unused but kept for future API integration
  */
+// eslint-disable-next-line no-unused-vars
 function parseOpeningResponse(data) {
   if (!data) return null;
 
