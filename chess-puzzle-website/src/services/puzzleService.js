@@ -116,11 +116,21 @@ export async function getNextPuzzle(mode = 'standard', modeConfig = {}) {
   
   // Record appearance
   const progress = await getUserProgress(chosen.id);
+  const isFirstAppearance = progress.appearances === 0;
+  
   await updateUserProgress(chosen.id, {
     ...progress,
     appearances: progress.appearances + 1,
     lastAttemptDate: Date.now(),
   });
+  
+  if (isFirstAppearance) {
+    const globalStats = await getGlobalStats();
+    await updateGlobalStats({
+      ...globalStats,
+      puzzlesSeen: (globalStats.puzzlesSeen || 0) + 1
+    });
+  }
   
   return chosen;
 }
@@ -130,6 +140,25 @@ export async function recordAttempt(puzzleId) {
   await updateUserProgress(puzzleId, {
     ...progress,
     attempts: progress.attempts + 1,
+  });
+
+  const globalStats = await getGlobalStats();
+  const puzzle = await getPuzzleById(puzzleId);
+  
+  const themePerformance = { ...globalStats.themePerformance };
+  if (puzzle && puzzle.themes && puzzle.themes.length > 0) {
+    puzzle.themes.forEach(theme => {
+      if (!themePerformance[theme]) {
+        themePerformance[theme] = { attempted: 0, solved: 0, firstTrySolved: 0, avgTime: 0 };
+      }
+      themePerformance[theme].attempted += 1;
+    });
+  }
+
+  await updateGlobalStats({
+    ...globalStats,
+    totalAttempts: (globalStats.totalAttempts || 0) + 1,
+    themePerformance
   });
 }
 
@@ -161,6 +190,7 @@ export async function recordSolve(puzzleId, timeSpent, firstTry = false) {
   // Update global stats
   const newTotalSolves = globalStats.totalSolves + 1;
   const newTimeSpent = globalStats.totalTimeSpent + timeSpent;
+  const newTotalFirstTrySolves = firstTry ? (globalStats.totalFirstTrySolves || 0) + 1 : (globalStats.totalFirstTrySolves || 0);
   
   // Adjust user rating
   const puzzle = await getPuzzleById(puzzleId);
@@ -199,9 +229,18 @@ export async function recordSolve(puzzleId, timeSpent, firstTry = false) {
     ...globalStats,
     totalSolves: newTotalSolves,
     totalTimeSpent: newTimeSpent,
+    totalFirstTrySolves: newTotalFirstTrySolves,
     estimatedRating: newRating,
     themePerformance,
     lastPlayDate: Date.now(),
+  });
+}
+
+export async function recordHint() {
+  const globalStats = await getGlobalStats();
+  await updateGlobalStats({
+    ...globalStats,
+    hintsUsed: (globalStats.hintsUsed || 0) + 1
   });
 }
 
@@ -232,6 +271,7 @@ export async function recordSkip(puzzleId) {
   await updateGlobalStats({
     ...globalStats,
     estimatedRating: newRating,
+    solutionsRevealed: (globalStats.solutionsRevealed || 0) + 1
   });
 }
 
@@ -241,7 +281,7 @@ export async function getGlobalStatsFormatted() {
   
   return {
     totalPuzzles: puzzles.length,
-    puzzlesSeen: stats.totalPuzzlesSeen,
+    puzzlesSeen: stats.puzzlesSeen || 0,
     totalAppearances: 0, // Deprecated, kept for compatibility
     totalAttempts: stats.totalAttempts,
     totalSolves: stats.totalSolves,
@@ -342,9 +382,17 @@ export async function getPuzzleCount(filters = {}) {
     );
   }
   
+  let solvedCount = 0;
+  for (const p of filtered) {
+    const progress = await getUserProgress(p.id);
+    if (progress && progress.solves > 0) {
+      solvedCount++;
+    }
+  }
+  
   return {
     total: filtered.length,
-    solved: 0, // TODO: Calculate from userProgress
+    solved: solvedCount,
   };
 }
 
@@ -367,8 +415,10 @@ export async function getUserStats() {
     ? Math.round((globalStats.totalSolves / globalStats.totalAttempts) * 100) 
     : 0;
   
-  // Calculate first-try accuracy (will need to track this better)
-  const accuracyFirstTry = 0; // TODO: Calculate properly
+  // Calculate first-try accuracy
+  const accuracyFirstTry = globalStats.totalSolves > 0
+    ? Math.round(((globalStats.totalFirstTrySolves || 0) / globalStats.totalSolves) * 100)
+    : 0;
   
   return {
     solved: globalStats.totalSolves,
@@ -377,8 +427,8 @@ export async function getUserStats() {
     totalTime: globalStats.totalTimeSpent,
     accuracy,
     accuracyFirstTry,
-    hintsUsed: 0, // TODO: Track hints
-    solutionsRevealed: 0, // TODO: Track solution reveals
+    hintsUsed: globalStats.hintsUsed || 0,
+    solutionsRevealed: globalStats.solutionsRevealed || 0,
     accuracyByTheme: globalStats.themePerformance,
   };
 }
