@@ -1,15 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { fetchOpeningPosition, getOpeningName, countPuzzlesForOpening } from '../services/openingService';
+import { fetchOpeningPosition, countPuzzlesForOpening } from '../services/openingService';
 import { addToRepertoire, getRepertoire } from '../services/indexedDBService';
 import './OpeningExplorer.css';
 
-const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
-  const [chess] = useState(new Chess());
+const OpeningExplorer = ({ onStartTraining, onPracticePuzzles, onBack, initialMoves }) => {
+  // Initialize chess instance with moves if provided
+  const [chess, setChess] = useState(() => {
+    const g = new Chess();
+    if (initialMoves && initialMoves.length > 0) {
+      initialMoves.forEach(m => {
+        try { g.move(m); } catch (e) {}
+      });
+    }
+    return g;
+  });
+  
   const [position, setPosition] = useState(chess.fen());
-  const [moveHistory, setMoveHistory] = useState([]);
-  const [moveSequence, setMoveSequence] = useState([]); // UCI moves
+  
+  const [moveHistory, setMoveHistory] = useState(() => {
+    if (initialMoves && initialMoves.length > 0) {
+      const g = new Chess();
+      const history = [];
+      initialMoves.forEach(m => {
+        try {
+          const res = g.move(m);
+          if (res) history.push(res.san);
+        } catch (e) {}
+      });
+      return history;
+    }
+    return [];
+  });
+  
+  const [moveSequence, setMoveSequence] = useState(initialMoves || []); // UCI moves
   const [availableMoves, setAvailableMoves] = useState([]);
   const [openingInfo, setOpeningInfo] = useState({ name: 'Starting Position', eco: 'A00' });
   const [loading, setLoading] = useState(false);
@@ -18,6 +43,9 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
   const [showStats, setShowStats] = useState(true);
   const [sortBy, setSortBy] = useState('popularity'); // 'popularity', 'white', 'draws', 'black'
   const [puzzleCount, setPuzzleCount] = useState(0);
+  const [showTrainingOptions, setShowTrainingOptions] = useState(false);
+  const [moveFrom, setMoveFrom] = useState(null);
+  const [optionSquares, setOptionSquares] = useState({});
 
   // Calculate board width
   useEffect(() => {
@@ -74,6 +102,113 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
     fetchMoves();
   }, [fetchMoves]);
 
+  // Show legal moves for a selected piece
+  const showLegalMoves = (square) => {
+    const moves = chess.moves({ square, verbose: true });
+    if (moves.length === 0) return;
+
+    const options = {};
+    moves.forEach((move) => {
+      const isCapture = move.flags.includes('c') || move.flags.includes('e');
+      options[move.to] = {
+        background: isCapture 
+          ? 'radial-gradient(transparent 0%, transparent 75%, rgba(100, 255, 218, 0.7) 76%, rgba(100, 255, 218, 0.7) 100%)'
+          : 'radial-gradient(rgba(100, 255, 218, 0.5) 22%, transparent 23%)',
+        borderRadius: '50%'
+      };
+    });
+    setOptionSquares(options);
+  };
+
+  // Handle user-initiated move (drag or click)
+  const handleUserMove = (from, to) => {
+    const moves = chess.moves({ verbose: true });
+    const validMove = moves.find(m => m.from === from && m.to === to);
+    
+    if (!validMove) {
+      console.log('Invalid move');
+      return false;
+    }
+
+    // Determine if promotion is needed
+    let promotion = 'q';
+    if (validMove.flags.includes('p')) {
+      // For now, always promote to queen. Could add UI for selection later.
+      promotion = 'q';
+    }
+
+    // Make the move
+    const result = chess.move({ from, to, promotion });
+    if (!result) {
+      console.log('Move failed');
+      return false;
+    }
+
+    // Update state immediately
+    const newPosition = chess.fen();
+    const uciMove = `${from}${to}${result.promotion || ''}`;
+    
+    setPosition(newPosition);
+    setMoveHistory([...moveHistory, result.san]);
+    setMoveSequence([...moveSequence, uciMove]);
+    setMoveFrom(null);
+    setOptionSquares({});
+
+    // Fetch stats asynchronously (non-blocking)
+    fetchMoves();
+
+    return true;
+  };
+
+  // Handle piece drag begin
+  const onPieceDragBegin = (piece, sourceSquare) => {
+    // Check if it's the correct player's turn
+    if (piece[0] !== chess.turn()) return;
+    setMoveFrom(sourceSquare);
+    showLegalMoves(sourceSquare);
+  };
+
+  // Handle piece drop
+  const onPieceDrop = (sourceSquare, targetSquare) => {
+    const success = handleUserMove(sourceSquare, targetSquare);
+    if (!success) {
+      setMoveFrom(null);
+      setOptionSquares({});
+    }
+    return success;
+  };
+
+  // Handle square click (for click-to-move)
+  const onSquareClick = (square) => {
+    // If no piece selected, try to select this square
+    if (!moveFrom) {
+      const piece = chess.get(square);
+      if (piece && piece.color === chess.turn()) {
+        setMoveFrom(square);
+        showLegalMoves(square);
+      }
+      return;
+    }
+
+    // If clicking the same square, deselect
+    if (square === moveFrom) {
+      setMoveFrom(null);
+      setOptionSquares({});
+      return;
+    }
+
+    // If clicking another piece of same color, select that instead
+    const piece = chess.get(square);
+    if (piece && piece.color === chess.turn()) {
+      setMoveFrom(square);
+      showLegalMoves(square);
+      return;
+    }
+
+    // Try to make the move
+    handleUserMove(moveFrom, square);
+  };
+
   // Sort moves
   const sortedMoves = [...availableMoves].sort((a, b) => {
     switch (sortBy) {
@@ -89,15 +224,16 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
     }
   });
 
-  // Play a move
+  // Play a move from the suggestions list
   const playMove = (move) => {
-    const game = new Chess(position);
     try {
-      const result = game.move(move.san);
+      const result = chess.move(move.san);
       if (result) {
-        setPosition(game.fen());
+        const newPosition = chess.fen();
+        setPosition(newPosition);
         setMoveHistory([...moveHistory, move.san]);
         setMoveSequence([...moveSequence, move.uci]);
+        setChess(new Chess(newPosition)); // Update chess instance
       }
     } catch (error) {
       console.error('Invalid move:', error);
@@ -108,23 +244,30 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
   const goBack = () => {
     if (moveHistory.length === 0) return;
     
-    const game = new Chess();
     const newHistory = moveHistory.slice(0, -1);
     const newSequence = moveSequence.slice(0, -1);
     
-    newHistory.forEach(move => game.move(move));
+    const newGame = new Chess();
+    newHistory.forEach(move => newGame.move(move));
     
-    setPosition(game.fen());
+    setChess(newGame);
+    setPosition(newGame.fen());
     setMoveHistory(newHistory);
     setMoveSequence(newSequence);
+    setMoveFrom(null);
+    setOptionSquares({});
   };
 
   // Reset to starting position
   const reset = () => {
-    const game = new Chess();
-    setPosition(game.fen());
+    const newGame = new Chess();
+    setChess(newGame);
+    setPosition(newGame.fen());
     setMoveHistory([]);
     setMoveSequence([]);
+    setMoveFrom(null);
+    setOptionSquares({});
+    setShowTrainingOptions(false);
   };
 
   // Add current line to repertoire
@@ -159,7 +302,14 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
   return (
     <div className="opening-explorer">
       <div className="explorer-header">
-        <h2>Opening Explorer</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {onBack && (
+            <button className="btn-explorer" onClick={onBack} style={{ padding: '0.4rem 0.8rem' }}>
+              ←
+            </button>
+          )}
+          <h2>Opening Explorer</h2>
+        </div>
         <div className="explorer-controls">
           <button className="btn-explorer" onClick={reset} disabled={moveHistory.length === 0}>
             Reset
@@ -183,12 +333,29 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
             <Chessboard
               position={position}
               boardWidth={boardWidth}
-              arePiecesDraggable={false}
+              arePiecesDraggable={true}
+              onPieceDragBegin={onPieceDragBegin}
+              onPieceDrop={onPieceDrop}
+              onSquareClick={onSquareClick}
+              customSquareStyles={{
+                ...optionSquares,
+                ...(moveFrom ? {
+                  [moveFrom]: {
+                    backgroundColor: 'rgba(100, 255, 218, 0.4)',
+                    boxShadow: 'inset 0 0 0 3px rgba(100, 255, 218, 0.8)'
+                  }
+                } : {})
+              }}
               customBoardStyle={{ borderRadius: '4px' }}
             />
           </div>
 
           <div className="opening-info">
+            <div className="explorer-instructions">
+              <span className="instruction-icon">💡</span>
+              <span>Move pieces on the board or click a suggested move below</span>
+            </div>
+            
             <div className="opening-name">
               <span className="eco-code">{openingInfo.eco}</span>
               <h3>{openingInfo.name}</h3>
@@ -208,22 +375,33 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
             {moveHistory.length >= 3 && (
               <div className="training-actions">
                 <button 
-                  className="btn-train"
-                  onClick={() => onStartTraining && onStartTraining(moveSequence, openingInfo)}
+                  className="btn-toggle-training"
+                  onClick={() => setShowTrainingOptions(!showTrainingOptions)}
                 >
-                  🎯 Train This Line
+                  {showTrainingOptions ? '▼' : '▶'} Training Options
                 </button>
-                {puzzleCount > 0 && (
-                  <div className="puzzle-connection">
-                    <span className="puzzle-badge">
-                      {puzzleCount} puzzles from this opening
-                    </span>
+                
+                {showTrainingOptions && (
+                  <div className="training-options-content">
                     <button 
-                      className="btn-puzzles"
-                      onClick={() => onPracticePuzzles && onPracticePuzzles(openingInfo, moveSequence)}
+                      className="btn-train"
+                      onClick={() => onStartTraining && onStartTraining(moveSequence, openingInfo)}
                     >
-                      📊 Practice Puzzles ({puzzleCount})
+                      🎯 Train This Line
                     </button>
+                    {puzzleCount > 0 && (
+                      <div className="puzzle-connection">
+                        <span className="puzzle-badge">
+                          {puzzleCount} puzzles from this opening
+                        </span>
+                        <button 
+                          className="btn-puzzles"
+                          onClick={() => onPracticePuzzles && onPracticePuzzles(openingInfo, moveSequence)}
+                        >
+                          📊 Practice Puzzles ({puzzleCount})
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -268,16 +446,15 @@ const OpeningExplorer = ({ onStartTraining, onPracticePuzzles }) => {
 
                 {showStats && (
                   <div className="move-stats">
+                    <div className="move-stats-labels">
+                      <span className="label-white">{move.winRate.white}%</span>
+                      <span className="label-draws">{move.winRate.draws}%</span>
+                      <span className="label-black">{move.winRate.black}%</span>
+                    </div>
                     <div className="stat-bar">
-                      <div className="bar-white" style={{ width: `${move.winRate.white}%` }}>
-                        {move.winRate.white > 10 && `${move.winRate.white}%`}
-                      </div>
-                      <div className="bar-draws" style={{ width: `${move.winRate.draws}%` }}>
-                        {move.winRate.draws > 10 && `${move.winRate.draws}%`}
-                      </div>
-                      <div className="bar-black" style={{ width: `${move.winRate.black}%` }}>
-                        {move.winRate.black > 10 && `${move.winRate.black}%`}
-                      </div>
+                      <div className="bar-white" style={{ width: `${move.winRate.white}%` }}></div>
+                      <div className="bar-draws" style={{ width: `${move.winRate.draws}%` }}></div>
+                      <div className="bar-black" style={{ width: `${move.winRate.black}%` }}></div>
                     </div>
                     <div className="popularity">{move.popularity}% popularity</div>
                   </div>

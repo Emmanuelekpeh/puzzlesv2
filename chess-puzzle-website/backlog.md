@@ -402,6 +402,20 @@
 - [ ] Repertoire viewer/manager page
 - [ ] Practice mode: White openings, Black openings, Both
 
+### P1 - URGENT: Fix Opening Explorer UX Issues (CRITICAL BUGS) ✅ COMPLETE
+- [x] Enable interactive board - allow users to move pieces freely
+- [x] Add onPieceDrop handler to validate and execute user moves
+- [x] Add onSquareClick handler for click-to-move
+- [x] Fetch new position data after user moves (not just pre-defined moves)
+- [x] Make training buttons less intrusive (collapsible or subtle)
+- [x] Fix chess instance state management (no longer creates new instance on every move)
+- [x] Add visual feedback for legal moves when piece selected
+- [x] Add helpful instruction text for users
+- [x] Make puzzle buttons less prominent (subtle blue styling)
+- [ ] Add "Free Explore" vs "Guided" mode toggle (optional enhancement)
+- [ ] Improve loading states during API calls (optional enhancement)
+- [ ] Add offline exploration support using chess.js for legal moves (optional enhancement)
+
 ### P2 - Guided Playthrough
 - [ ] Auto-play opening lines with explanations
 - [ ] Show move purpose and tactical ideas
