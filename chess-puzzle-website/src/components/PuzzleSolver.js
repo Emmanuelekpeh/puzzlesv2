@@ -285,7 +285,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle]);
 
-  const handleHint = () => {
+  const handleHint = useCallback(() => {
     if (locked || solved) return;
     const nextMove = puzzle.moves[userMoveIdx];
     if (nextMove) {
@@ -295,7 +295,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
       setFeedback({ type: 'hint', message: 'Consider your most forcing move.' });
       recordHint();
     }
-  };
+  }, [locked, solved, puzzle, userMoveIdx]);
 
   const handleShowTheme = () => {
     if (locked || solved || showThemes) return;
@@ -491,7 +491,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     }
   };
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     const g = new Chess();
     g.load(puzzle.fen);
     const setupMove = uciToMove(puzzle.moves[0]);
@@ -529,7 +529,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     setTimeSpent(0);
     setTimerActive(true);
     startRef.current = Date.now();
-  };
+  }, [puzzle, updateCheckState]);
 
   const handleSkip = () => {
     setShowAnalysis(true);

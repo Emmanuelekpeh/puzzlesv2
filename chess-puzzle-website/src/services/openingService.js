@@ -25,11 +25,13 @@ const COMMON_OPENINGS = {
 };
 
 let masterOpeningsTree = null;
-try {
-  masterOpeningsTree = require('../data/master_openings.json');
-} catch (e) {
-  console.error('Could not load master openings database:', e);
-}
+// Optional: Load master openings tree if available
+// This file is not required for the app to function
+// try {
+//   masterOpeningsTree = require('../data/master_openings.json');
+// } catch (e) {
+//   console.warn('Master openings database not loaded (optional)');
+// }
 
 /**
  * Opening Service - Handles opening database queries and training
