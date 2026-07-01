@@ -8,6 +8,7 @@ const StreakCalendar = () => {
 
   useEffect(() => {
     loadStreakData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadStreakData = async () => {
@@ -26,10 +27,21 @@ const StreakCalendar = () => {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       
-      // Check if user played on this day (simplified - would need session history)
-      const lastPlayDate = stats.lastPlayDate ? new Date(stats.lastPlayDate).toISOString().split('T')[0] : null;
+      // Check if user played on this day using session history
+      const playedDates = new Set();
+      if (stats.sessionHistory) {
+        stats.sessionHistory.forEach(session => {
+          if (session.date) {
+            playedDates.add(session.date.split('T')[0]);
+          }
+        });
+      }
+      if (stats.lastPlayDate) {
+        playedDates.add(new Date(stats.lastPlayDate).toISOString().split('T')[0]);
+      }
+      
       const isToday = dateStr === today.toISOString().split('T')[0];
-      const hasPlayed = lastPlayDate === dateStr || (isToday && stats.lastPlayDate);
+      const hasPlayed = playedDates.has(dateStr);
       
       days.push({
         date: dateStr,

@@ -84,14 +84,12 @@ export async function migrateToIndexedDB() {
 }
 
 function calculateGlobalStats(tracker) {
-  let totalAppearances = 0;
   let totalAttempts = 0;
   let totalSolves = 0;
   let puzzlesSeen = 0;
   
   for (const id of Object.keys(tracker)) {
     const s = tracker[id];
-    totalAppearances += s.a || 0;
     totalAttempts += s.t || 0;
     totalSolves += s.s || 0;
     if (s.a > 0) puzzlesSeen++;

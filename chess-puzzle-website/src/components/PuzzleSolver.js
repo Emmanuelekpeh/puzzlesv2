@@ -3,7 +3,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import confetti from 'canvas-confetti';
 import { useSwipeable } from 'react-swipeable';
-import { recordAttempt, recordSolve, getPuzzleTrack } from '../services/puzzleService';
+import { recordAttempt, recordSolve, recordFailure, recordSkip, recordHint, getPuzzleTrack } from '../services/puzzleService';
 import { analyzeWrongMove } from '../services/errorDetectionService';
 import { checkAchievements } from '../services/achievementService';
 import { getGlobalStats } from '../services/indexedDBService';
@@ -38,6 +38,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
   const [locked, setLocked] = useState(true);
   const [solved, setSolved] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [hasFailed, setHasFailed] = useState(false);
   const [moveHistory, setMoveHistory] = useState([]);
   const [timeSpent, setTimeSpent] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
@@ -111,6 +112,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     setLocked(true);
     setSolved(false);
     setAttempted(false);
+    setHasFailed(false);
     setMoveHistory([]);
     setTimeSpent(0);
     setTimerActive(false);
@@ -126,7 +128,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     setShowAnalysis(false); // Hide analysis on new puzzle
     setPlayingSolution(false);
     setSolutionMoveIdx(0);
-    setPuzzleTrack(getPuzzleTrack(puzzle.id));
+    getPuzzleTrack(puzzle.id).then(setPuzzleTrack);
 
     if (timerRef.current) clearInterval(timerRef.current);
     if (solutionTimerRef.current) clearInterval(solutionTimerRef.current);
@@ -164,6 +166,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
       setTimerActive(true);
       startRef.current = Date.now();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle]);
 
   // Timer
@@ -200,9 +203,9 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
           setTimerActive(false);
           setSolved(true);
           setShowThemes(true); // Reveal themes on solve
-          const wasFirstTry = !attempted || (history.length === 1);
+          const wasFirstTry = !hasFailed;
           recordSolve(puzzle.id, timeSpent, wasFirstTry);
-          setPuzzleTrack(getPuzzleTrack(puzzle.id));
+          getPuzzleTrack(puzzle.id).then(setPuzzleTrack);
           if (typeof refreshStats === 'function') {
             refreshStats();
           }
@@ -245,9 +248,9 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
             setTimerActive(false);
             setSolved(true);
             setShowThemes(true); // Reveal themes on solve
-            const wasFirstTry = newHistory.length <= 2; // Setup move + 1 user move
+            const wasFirstTry = !hasFailed;
             recordSolve(puzzle.id, timeSpent, wasFirstTry);
-            setPuzzleTrack(getPuzzleTrack(puzzle.id));
+            getPuzzleTrack(puzzle.id).then(setPuzzleTrack);
             setFeedback({ type: 'success', message: 'Puzzle solved.' });
             if (typeof refreshStats === 'function') {
               refreshStats();
@@ -279,6 +282,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
         setLocked(false);
       }
     }, 500);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle]);
 
   const handleHint = () => {
@@ -289,6 +293,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
       // More subtle hint - just highlight the piece, don't tell them the square
       setHintSquare(fromSq);
       setFeedback({ type: 'hint', message: 'Consider your most forcing move.' });
+      recordHint();
     }
   };
 
@@ -308,7 +313,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     if (!attempted) {
       setAttempted(true);
       recordAttempt(puzzle.id);
-      setPuzzleTrack(getPuzzleTrack(puzzle.id));
+      getPuzzleTrack(puzzle.id).then(setPuzzleTrack);
       // Update session stats for attempt
       if (typeof window.updateSessionStats === 'function') {
         window.updateSessionStats(false);
@@ -369,9 +374,9 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
         setSolved(true);
         setLocked(true);
         setShowThemes(true); // Reveal themes on solve
-        const wasFirstTry = newHistory.length <= 2; // Setup move + 1 user move
+        const wasFirstTry = !hasFailed;
         recordSolve(puzzle.id, timeSpent, wasFirstTry);
-        setPuzzleTrack(getPuzzleTrack(puzzle.id));
+        getPuzzleTrack(puzzle.id).then(setPuzzleTrack);
         setFeedback({ type: 'success', message: '🎉 Excellent! Puzzle Solved.' });
         if (typeof refreshStats === 'function') {
           refreshStats();
@@ -401,6 +406,14 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     } else {
       vibrate([50, 50, 50]); // Error buzz
       
+      if (!hasFailed) {
+        setHasFailed(true);
+        recordFailure(puzzle.id);
+        if (typeof refreshStats === 'function') {
+          refreshStats();
+        }
+      }
+
       // Enhanced wrong move feedback
       const analysis = analyzeWrongMove(chess.fen(), { from, to, promotion: promo }, expected, puzzle);
       setFeedback({ type: 'error', message: analysis.message });
@@ -494,6 +507,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     setLocked(false);
     setSolved(false);
     setAttempted(false);
+    setHasFailed(false);
     setHintSquare(null);
     setMoveFrom(null);
     setOptionSquares({});
@@ -522,6 +536,10 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     setShowThemes(true);
     setLocked(true);
     setTimerActive(false);
+    recordSkip(puzzle.id);
+    if (typeof refreshStats === 'function') {
+      refreshStats();
+    }
     // Start solution playback
     playSolution();
   };
@@ -612,6 +630,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
   const stateRef = useRef({ solved, locked, onNext, handleRetry, handleHint });
   useEffect(() => {
     stateRef.current = { solved, locked, onNext, handleRetry, handleHint };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [solved, locked, onNext, handleRetry, handleHint]);
 
   // Keyboard navigation for review mode and actions
@@ -657,6 +676,7 @@ const PuzzleSolver = ({ puzzle, onNext, refreshStats }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyFens, showAnalysis]);
 
   const formatTime = (s) => {

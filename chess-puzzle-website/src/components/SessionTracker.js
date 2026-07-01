@@ -61,14 +61,38 @@ const SessionTracker = ({ onEndSession }) => {
     return () => {
       delete window.updateSessionStats;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyProgress]);
 
   const handleEndSession = () => {
     setShowSummary(true);
   };
 
-  const handleCloseSummary = () => {
+  const handleCloseSummary = async () => {
     setShowSummary(false);
+    
+    // Save session to globalStats
+    try {
+      const { getGlobalStats, updateGlobalStats } = await import('../services/indexedDBService');
+      const stats = await getGlobalStats();
+      const newSession = {
+        date: new Date().toISOString(),
+        puzzlesAttempted: sessionStats.puzzlesAttempted,
+        puzzlesSolved: sessionStats.puzzlesSolved,
+        timeSpent: sessionStats.timeSpent,
+        accuracy: sessionStats.puzzlesAttempted > 0 
+          ? Math.round((sessionStats.puzzlesSolved / sessionStats.puzzlesAttempted) * 100) 
+          : 0
+      };
+      
+      await updateGlobalStats({
+        ...stats,
+        sessionHistory: [...(stats.sessionHistory || []), newSession].slice(-50) // Keep last 50
+      });
+    } catch (e) {
+      console.error('Failed to save session history', e);
+    }
+
     // Reset session stats
     setSessionStats({
       puzzlesAttempted: 0,

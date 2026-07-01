@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { fetchOpeningPosition, getMoveExplanation } from '../services/openingService';
+import { getMoveExplanation } from '../services/openingService';
 import { updateOpeningProgress, getOpeningProgress } from '../services/indexedDBService';
 import './OpeningTrainer.css';
 
-const OpeningTrainer = ({ line, onComplete }) => {
+const OpeningTrainer = ({ line, onComplete, onExit }) => {
   const [chess, setChess] = useState(new Chess());
   const [position, setPosition] = useState('');
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
@@ -42,9 +42,21 @@ const OpeningTrainer = ({ line, onComplete }) => {
   // Initialize position
   useEffect(() => {
     const game = new Chess();
+    
+    // If playing as black, we need to play white's first move automatically
+    if (line.color === 'black' && line.moves.length > 0) {
+      try {
+        game.move(line.moves[0]);
+        setCurrentMoveIndex(1);
+      } catch (e) {
+        console.error("Failed to play initial white move", e);
+      }
+    } else {
+      setCurrentMoveIndex(0);
+    }
+    
     setChess(game);
     setPosition(game.fen());
-    setCurrentMoveIndex(0);
     setFeedback({ type: 'prompt', message: `Playing as ${line.color}. Make the opening move.` });
   }, [line]);
 
@@ -103,10 +115,13 @@ const OpeningTrainer = ({ line, onComplete }) => {
   const onDrop = async (from, to) => {
     if (completed) return false;
 
+    const correctMove = line.moves[currentMoveIndex];
+    const expectedPromotion = correctMove && correctMove.length > 4 ? correctMove.substring(4, 5) : 'q';
+
     const game = new Chess(chess.fen());
     let move;
     try {
-      move = game.move({ from, to, promotion: 'q' });
+      move = game.move({ from, to, promotion: expectedPromotion });
     } catch {
       setFeedback({ type: 'error', message: 'Illegal move' });
       return false;
@@ -121,7 +136,6 @@ const OpeningTrainer = ({ line, onComplete }) => {
     setOptionSquares({});
 
     // Check if this is the correct move
-    const correctMove = line.moves[currentMoveIndex];
     const userUci = `${move.from}${move.to}${move.promotion || ''}`;
 
     if (userUci === correctMove || move.san === correctMove) {
@@ -152,8 +166,7 @@ const OpeningTrainer = ({ line, onComplete }) => {
       if (nextIndex >= line.moves.length) {
         // Line complete!
         setCompleted(true);
-        setFeedback({ type: 'success', message: `🎉 Opening line complete! You've mastered ${line.name}` });
-        setTimeout(() => onComplete && onComplete(), 2000);
+        setFeedback({ type: 'success', message: `🎉 Opening line complete!` });
         return true;
       }
 
@@ -161,7 +174,7 @@ const OpeningTrainer = ({ line, onComplete }) => {
       if (nextIndex < line.moves.length) {
         setTimeout(() => {
           playOpponentMove(game, nextIndex);
-        }, 800);
+        }, 600);
       }
 
       setCurrentMoveIndex(nextIndex);
@@ -195,13 +208,20 @@ const OpeningTrainer = ({ line, onComplete }) => {
     if (!oppMove) return;
 
     try {
-      const result = game.move(oppMove);
+      const from = oppMove.substring(0, 2);
+      const to = oppMove.substring(2, 4);
+      const promotion = oppMove.length > 4 ? oppMove.substring(4, 5) : undefined;
+      
+      const result = game.move({ from, to, promotion });
       if (result) {
         setChess(game);
         setPosition(game.fen());
         setCurrentMoveIndex(moveIndex + 1);
         
-        if (moveIndex + 1 < line.moves.length) {
+        if (moveIndex + 1 >= line.moves.length) {
+          setCompleted(true);
+          setFeedback({ type: 'success', message: `🎉 Opening line complete!` });
+        } else {
           setFeedback({ type: 'prompt', message: 'Your turn. What\'s the next move?' });
         }
       }
@@ -229,9 +249,21 @@ const OpeningTrainer = ({ line, onComplete }) => {
 
   const handleRetry = () => {
     const game = new Chess();
+    
+    // If playing as black, we need to play white's first move automatically
+    if (line.color === 'black' && line.moves.length > 0) {
+      try {
+        game.move(line.moves[0]);
+        setCurrentMoveIndex(1);
+      } catch (e) {
+        console.error("Failed to play initial white move", e);
+      }
+    } else {
+      setCurrentMoveIndex(0);
+    }
+    
     setChess(game);
     setPosition(game.fen());
-    setCurrentMoveIndex(0);
     setCompleted(false);
     setFeedback({ type: 'prompt', message: `Playing as ${line.color}. Make the opening move.` });
     setMoveFrom(null);
@@ -250,12 +282,19 @@ const OpeningTrainer = ({ line, onComplete }) => {
   return (
     <div className="opening-trainer">
       <div className="trainer-header">
-        <div className="opening-info-compact">
-          <span className="eco-badge">{line.eco}</span>
-          <h3>{line.name}</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {onExit && (
+            <button className="btn-trainer" onClick={onExit} style={{ padding: '0.4rem 0.8rem', margin: 0 }}>
+              ←
+            </button>
+          )}
+          <div className="opening-info-compact">
+            <span className="eco-badge">{line.eco}</span>
+            <h3>{line.name}</h3>
+          </div>
         </div>
         <div className="progress-indicator">
-          <span>Move {currentMoveIndex + 1} / {line.moves.length}</span>
+          <span>Move {Math.floor(currentMoveIndex / 2) + 1}</span>
           {progress && (
             <span className="mastery">Mastery: {progress.masteryLevel || 0}%</span>
           )}
@@ -293,7 +332,7 @@ const OpeningTrainer = ({ line, onComplete }) => {
         </button>
         {completed && (
           <button className="btn-trainer btn-primary" onClick={onComplete}>
-            Continue
+            Explore Further
           </button>
         )}
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getFailedPuzzles, getGlobalStats } from '../services/indexedDBService';
+import { getFailedPuzzles } from '../services/indexedDBService';
 import './TrainingModeSelector.css';
 
 const TrainingModeSelector = ({ currentMode, onModeChange }) => {
